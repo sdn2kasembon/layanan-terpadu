@@ -2965,13 +2965,12 @@ if (globalSem && !globalSem.dataset.initialized) {
         (d.semester || 'Genap') === activeSemester
     );
 
-    // Guru hanya melihat jurnal miliknya
-    if (
-        window.AppState.role === "teacher" ||
-        window.AppState.role === "subject_teacher"
-    ) {
+    // Guru yang login hanya melihat jurnal miliknya sendiri.
+    // Kepala Sekolah dan Administrator tetap dapat melihat seluruh jurnal.
+    if (['teacher', 'subject_teacher'].includes(window.AppState.role)) {
+        const currentTeacherId = String(window.AppState.currentTeacherId || '');
         filtered = filtered.filter(d =>
-            d.teacherId === window.AppState.currentTeacherId
+            String(d.teacherId || '') === currentTeacherId
         );
     }
 
@@ -3054,11 +3053,16 @@ if (globalSem && !globalSem.dataset.initialized) {
                     bindAttendanceEvents();
                     break;
                 case 'journals':
+                case 'journals':
                     title.innerText = 'Jurnal Mengajar Guru';
+                    // Guru/Guru Mapel tidak boleh mengganti filter ke jurnal guru lain.
+                    if (['teacher','subject_teacher'].includes(window.AppState.role)) {
+                        window.AppState.selectedTeacherFilter = '';
+                    }
                     container.innerHTML = getJournalsViewHTML(filterJournals(window.AppState.journals));
                     bindJournalsEvents();
                     break;
-                case 'service3':
+                    break;
                     title.innerText = 'Layanan 3 — SIPEN-GURU';
                     container.innerHTML = getService3ViewHTML();
                     setTimeout(mountService3Frame, 30);
@@ -7866,18 +7870,18 @@ if (globalSem && !globalSem.dataset.initialized) {
                         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                             <h4 class="font-bold text-sm text-slate-800">Catatan Jurnal Mengajar</h4>
                             <input type="date" id="journalDateFilter" title="Filter berdasarkan Tanggal" value="${window.AppState.selectedJournalDateFilter || ''}" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold bg-white outline-none focus:ring-1 focus:ring-blue-500">
-                            ${window.AppState.role !== 'teacher' ? `
+                            ${['teacher','subject_teacher'].includes(window.AppState.role) ? `
+                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">Jurnal Saya</span>
+                            ` : `
                                 <select id="journalClassFilter" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold bg-white outline-none focus:ring-1 focus:ring-blue-500">
                                     <option value="">-- Semua Kelas --</option>
                                     ${filterClassOptions}
                                 </select>
-                            ` : `
-                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">${window.AppState.assignedClass || 'Kelas Anda'}</span>
+                                <select id="journalTeacherFilter" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold bg-white outline-none focus:ring-1 focus:ring-blue-500">
+                                    <option value="">-- Semua Guru --</option>
+                                    ${filterTeacherOptions}
+                                </select>
                             `}
-                            <select id="journalTeacherFilter" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold bg-white outline-none focus:ring-1 focus:ring-blue-500">
-                                <option value="">-- Semua Guru --</option>
-                                ${filterTeacherOptions}
-                            </select>
                         </div>
                         <div class="flex gap-2 w-full md:w-auto justify-end">
                             <button id="btnPrintJournalPdf" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow transition flex items-center gap-1.5">
@@ -7941,9 +7945,15 @@ if (globalSem && !globalSem.dataset.initialized) {
                                         <td class="px-3 py-3 text-xs text-slate-600 border border-slate-300"><div class="whitespace-pre-wrap">${j.assessment || '-'}</div></td>
                                         <td class="px-3 py-3 text-xs text-slate-600 border border-slate-300"><div class="whitespace-pre-wrap">${j.reflection || '-'}</div></td>
                                         <td class="px-3 py-3 text-center whitespace-nowrap border border-slate-300">
-                                            <button onclick="window.viewJournal('${j.id}')" class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition" title="Lihat / Edit"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
-                                            ${window.AppState.role !== 'principal' ? `
-                                                <button onclick="window.deleteJournal('${j.id}')" class="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                                            <button onclick="window.viewJournal('${j.id}')"
+                                                class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition"
+                                                title="${['teacher','subject_teacher'].includes(window.AppState.role) ? 'Lihat / Edit' : 'Lihat'}">
+                                                <i data-lucide="${['teacher','subject_teacher'].includes(window.AppState.role) ? 'edit-3' : 'eye'}" class="w-4 h-4"></i>
+                                            </button>
+                                            ${['teacher','subject_teacher'].includes(window.AppState.role) ? `
+                                                <button onclick="window.deleteJournal('${j.id}')" class="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
                                             ` : ''}
                                         </td>
                                     </tr>
@@ -8039,13 +8049,14 @@ if (globalSem && !globalSem.dataset.initialized) {
                             <td class="px-4 py-3 text-center whitespace-nowrap border border-slate-300">
 
                                 <button
+                                <button
                                     onclick="window.viewNonTatapMukaJournal('${j.id}')"
                                     class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition"
-                                    title="Lihat / Edit">
-                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
+                                    title="${['teacher','subject_teacher'].includes(window.AppState.role) ? 'Lihat / Edit' : 'Lihat'}">
+                                    <i data-lucide="${['teacher','subject_teacher'].includes(window.AppState.role) ? 'edit-3' : 'eye'}" class="w-4 h-4"></i>
                                 </button>
 
-                                ${window.AppState.role !== 'principal' ? `
+                                ${['teacher','subject_teacher'].includes(window.AppState.role) ? `
                                     <button
                                         onclick="window.deleteNonTatapMukaJournal('${j.id}')"
                                         class="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition"
@@ -8053,7 +8064,6 @@ if (globalSem && !globalSem.dataset.initialized) {
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 ` : ''}
-
                             </td>
 
                         </tr>
@@ -8127,10 +8137,10 @@ if (globalSem && !globalSem.dataset.initialized) {
                 const locName = window.AppState.role === 'teacher' ? window.AppState.assignedClass : (window.AppState.selectedClassFilter || 'Semua Kelas');
 
                 let activeTeacherName = window.AppState.selectedTeacherFilter;
-                if (!activeTeacherName && filtered.length > 0) {
-                    activeTeacherName = filtered[0].teacherName;
-                }
-                if (!activeTeacherName) {
+                if (['teacher','subject_teacher'].includes(window.AppState.role)) {
+                    filtered = filtered.filter(d => String(d.teacherId || '') === String(window.AppState.currentTeacherId || ''));
+                } else if (window.AppState.selectedClassFilter) {
+                    filtered = filtered.filter(d => (d.className || d.assignedClass) === window.AppState.selectedClassFilter);
                     const classes = window.AppState.classes || [];
                     const classData = classes.find(c => c.name === locName);
                     activeTeacherName = classData && classData.teacherName !== 'Belum Ditentukan' ? classData.teacherName : null;
@@ -8252,7 +8262,7 @@ const rowsData = semuaRows.map((r, i) => [
     const journal = id ? journals.find(j => j.id === id) : null;
 
     const canManageJournal = ['teacher', 'subject_teacher'].includes(window.AppState.role);
-    const isOwner = !journal || (String(journal.teacherId || '') !== '' && String(journal.teacherId) === String(window.AppState.currentTeacherId || ''));
+    const isOwner = !journal || (String(journal.teacherId || '') !== '' && String(journal.teacherId || '') === String(window.AppState.currentTeacherId || ''));
     if (!id && !canManageJournal) { showToast('Hanya guru yang login yang dapat membuat jurnal nontatap muka.', 'error'); return; }
     const isReadOnly = !canManageJournal || !isOwner;
 
@@ -8574,7 +8584,7 @@ renderCurrentView();
             const teachers = window.AppState.teachers || [];
             const journal = id ? journals.find(j => j.id === id) : null;
             const canManageJournal = ['teacher', 'subject_teacher'].includes(window.AppState.role);
-            const isOwner = !journal || (String(journal.teacherId || '') !== '' && String(journal.teacherId) === String(window.AppState.currentTeacherId || ''));
+    const isOwner = !journal || (String(journal.teacherId || '') !== '' && String(journal.teacherId || '') === String(window.AppState.currentTeacherId || ''));
             if (!id && !canManageJournal) { showToast('Hanya guru yang login yang dapat membuat jurnal mengajar.', 'error'); return; }
             const isReadOnly = !canManageJournal || !isOwner;
             
@@ -11581,31 +11591,40 @@ if (!isPasswordHidden) {
                     return;
                 }
 
-                const normalizeClassForMatch = (value) => String(value || '')
-                    .trim()
-                    .toLowerCase()
-                    .replace(/^wali\s+/i, '')
-                    .replace(/^kelas\s+/i, '')
-                    .replace(/\s+/g, ' ');
+                // Guru Mapel tidak boleh ditolak hanya karena field assignedClass
+                // masih terisi pada data lama. Penentuan Wali Kelas harus berasal
+                // dari penetapan kelas yang benar-benar menunjuk guru tersebut.
+                const teacherId = String(teacher.id || '').trim();
+                const teacherCode = String(
+                    teacher.teacherCode || teacher.guruCode || teacher.kodeGuru || teacher.code || code
+                ).trim().toUpperCase();
+                const teacherName = String(teacher.name || '').trim().toLowerCase();
 
-                const teacherAssigned = String(teacher.assignedClass || '').trim();
                 const isWaliKelas = (window.AppState.classes || []).some(c => {
-                    const className = normalizeClassForMatch(c.name);
-                    const assigned = normalizeClassForMatch(teacherAssigned);
-                    const teacherName = String(c.teacherName || '').trim().toLowerCase();
-                    return (className && assigned && className === assigned) ||
-                           (teacherName && teacherName === String(teacher.name || '').trim().toLowerCase());
+                    const classTeacherId = String(
+                        c.teacherId || c.waliKelasId || c.waliKelasTeacherId || ''
+                    ).trim();
+                    const classTeacherCode = String(
+                        c.teacherCode || c.waliKelasCode || ''
+                    ).trim().toUpperCase();
+                    const classTeacherName = String(c.teacherName || c.waliKelas || '').trim().toLowerCase();
+
+                    return (teacherId && classTeacherId && classTeacherId === teacherId) ||
+                           (teacherCode && classTeacherCode && classTeacherCode === teacherCode) ||
+                           (teacherName && classTeacherName && classTeacherName === teacherName);
                 });
 
                 if (isWaliKelas) {
-                    showToast('Akses ditolak. Kode ini terdaftar sebagai Wali Kelas. Silakan pilih tab Wali Kelas.', 'error');
+                    showToast('Kode ini terdaftar sebagai Wali Kelas. Silakan pilih tab Wali Kelas.', 'error');
                     return;
                 }
 
                 const loginSubjects = getLoggedInTeacherSubjects(teacher);
+                // Data lama dapat menyimpan status Guru Mapel tanpa field mapel.
+                // Jangan memblokir login hanya karena daftar mapel belum terbaca;
+                // pembatasan mapel tetap diterapkan saat membuka Penilaian.
                 if (loginSubjects.length === 0) {
-                    showToast('Akses Guru Mapel belum lengkap. Administrator harus mengisi Mata Pelajaran yang Diampu pada Data Guru.', 'error');
-                    return;
+                    console.warn('Guru Mapel login tanpa daftar mapel yang terbaca:', teacher);
                 }
 
                 window.AppState.assignedClass = '';
