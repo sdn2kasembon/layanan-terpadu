@@ -623,7 +623,7 @@
             '<div class="text-center mb-6"><div class="w-14 h-14 mx-auto rounded-2xl bg-violet-100 text-violet-700 flex items-center justify-center mb-3"><i data-lucide="award" class="w-7 h-7"></i></div>'+
             '<h3 class="text-xl font-black text-slate-800">Login Kepala Sekolah — Jurnal 7 KAIH</h3>'+
             '<p class="text-sm text-slate-500 mt-1">Gunakan Kode Kepala Sekolah yang sama dengan Administrasi Pembelajaran.</p></div>'+
-            '<label class="block text-xs font-bold text-slate-600 mb-2">Kode Kepala Sekolah</label>'+ '<input id="kaihPrincipalCodeInput" type="text" autocomplete="off" class="w-full px-4 py-3 rounded-xl border border-slate-300 font-mono font-bold uppercase outline-none focus:ring-2 focus:ring-violet-500" placeholder="Contoh: KS-001">'+
+            '<label class="block text-xs font-bold text-slate-600 mb-2">Kode Kepala Sekolah</label>'+ '<input id="kaihPrincipalCodeInput" type="password" autocomplete="off" class="w-full px-4 py-3 rounded-xl border border-slate-300 font-mono font-bold uppercase outline-none focus:ring-2 focus:ring-violet-500" placeholder="Contoh: KS-001">'+
             '<div id="kaihPrincipalLoginError" class="hidden mt-3 text-sm font-semibold text-rose-600"></div>'+ '<div class="grid grid-cols-2 gap-3 mt-6"><button type="button" id="kaihPrincipalCancel" class="py-3 rounded-xl border border-slate-300 font-bold text-slate-600">Batal</button>'+ '<button type="button" id="kaihPrincipalSubmit" class="py-3 rounded-xl bg-violet-600 hover:bg-violet-700 text-white font-bold">Masuk ke Jurnal</button></div></div>';
           document.body.appendChild(pmodal);
           if(window.lucide) window.lucide.createIcons();
@@ -675,7 +675,7 @@
             '<div class="text-center mb-6"><div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3"><i data-lucide="graduation-cap" class="w-7 h-7"></i></div>'+
             '<h3 class="text-xl font-black text-slate-800">Login Guru — Jurnal 7 KAIH</h3>'+
             '<p class="text-sm text-slate-500 mt-1">Gunakan Kode Guru (Wali Kelas) yang sama dengan Administrasi Pembelajaran.</p></div>'+
-            '<label class="block text-xs font-bold text-slate-600 mb-2">Kode Guru (Wali Kelas)</label>'+            '<input id="kaihTeacherCodeInput" type="text" autocomplete="off" class="w-full px-4 py-3 rounded-xl border border-slate-300 font-mono font-bold uppercase outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Contoh: GR-001">'+
+            '<label class="block text-xs font-bold text-slate-600 mb-2">Kode Guru (Wali Kelas)</label>'+            '<input id="kaihTeacherCodeInput" type="password" autocomplete="off" class="w-full px-4 py-3 rounded-xl border border-slate-300 font-mono font-bold uppercase outline-none focus:ring-2 focus:ring-emerald-500" placeholder="Contoh: GR-001">'+
             '<div id="kaihTeacherLoginError" class="hidden mt-3 text-sm font-semibold text-rose-600"></div>'+            '<div class="grid grid-cols-2 gap-3 mt-6"><button type="button" id="kaihTeacherCancel" class="py-3 rounded-xl border border-slate-300 font-bold text-slate-600">Batal</button>'+            '<button type="button" id="kaihTeacherSubmit" class="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold">Masuk ke Jurnal</button></div></div>';
           document.body.appendChild(modal);
           if(window.lucide) window.lucide.createIcons();
@@ -1156,7 +1156,7 @@ window.esc = esc;
 window.__loginFallbackDisabled = true;
 </script>
 <!-- Notification Toast Container -->
-<div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none" id="toastContainer"></div>
+<div class="fixed top-5 right-5 z-[300] flex flex-col gap-2 pointer-events-none" id="toastContainer"></div>
 <!-- APP CONTAINER -->
 <div class="flex-1 flex flex-col min-h-screen" id="app">
 <!-- LOGIN VIEW -->
@@ -1206,7 +1206,7 @@ window.__loginFallbackDisabled = true;
 <i class="w-5 h-5" data-lucide="mail"></i>
 </span>
 <input class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition" id="loginEmail" placeholder="admin@sekolah.sch.id" required="" type="text" value="admin@sekolah.sch.id"/>
-<input class="hidden w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition font-mono uppercase" disabled="" id="loginTeacherCode" placeholder="Masukkan Kode (Misal: GR-001)" type="text"/>
+<input class="hidden w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition font-mono uppercase" disabled="" id="loginTeacherCode" placeholder="Masukkan Kode (Misal: GR-001)" type="password"/>
 </div>
 </div>
 <!-- Pilihan Kelas Khusus Wali Kelas/Guru -->
@@ -2965,12 +2965,13 @@ if (globalSem && !globalSem.dataset.initialized) {
         (d.semester || 'Genap') === activeSemester
     );
 
-    // Guru yang login hanya melihat jurnal miliknya sendiri.
-    // Kepala Sekolah dan Administrator tetap dapat melihat seluruh jurnal.
-    if (['teacher', 'subject_teacher'].includes(window.AppState.role)) {
-        const currentTeacherId = String(window.AppState.currentTeacherId || '');
+    // Guru hanya melihat jurnal miliknya
+    if (
+        window.AppState.role === "teacher" ||
+        window.AppState.role === "subject_teacher"
+    ) {
         filtered = filtered.filter(d =>
-            String(d.teacherId || '') === currentTeacherId
+            d.teacherId === window.AppState.currentTeacherId
         );
     }
 
@@ -3053,16 +3054,11 @@ if (globalSem && !globalSem.dataset.initialized) {
                     bindAttendanceEvents();
                     break;
                 case 'journals':
-                case 'journals':
                     title.innerText = 'Jurnal Mengajar Guru';
-                    // Guru/Guru Mapel tidak boleh mengganti filter ke jurnal guru lain.
-                    if (['teacher','subject_teacher'].includes(window.AppState.role)) {
-                        window.AppState.selectedTeacherFilter = '';
-                    }
                     container.innerHTML = getJournalsViewHTML(filterJournals(window.AppState.journals));
                     bindJournalsEvents();
                     break;
-                    break;
+                case 'service3':
                     title.innerText = 'Layanan 3 — SIPEN-GURU';
                     container.innerHTML = getService3ViewHTML();
                     setTimeout(mountService3Frame, 30);
@@ -7870,18 +7866,18 @@ if (globalSem && !globalSem.dataset.initialized) {
                         <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                             <h4 class="font-bold text-sm text-slate-800">Catatan Jurnal Mengajar</h4>
                             <input type="date" id="journalDateFilter" title="Filter berdasarkan Tanggal" value="${window.AppState.selectedJournalDateFilter || ''}" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold bg-white outline-none focus:ring-1 focus:ring-blue-500">
-                            ${['teacher','subject_teacher'].includes(window.AppState.role) ? `
-                                <span class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold">Jurnal Saya</span>
-                            ` : `
+                            ${window.AppState.role !== 'teacher' ? `
                                 <select id="journalClassFilter" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold bg-white outline-none focus:ring-1 focus:ring-blue-500">
                                     <option value="">-- Semua Kelas --</option>
                                     ${filterClassOptions}
                                 </select>
-                                <select id="journalTeacherFilter" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold bg-white outline-none focus:ring-1 focus:ring-blue-500">
-                                    <option value="">-- Semua Guru --</option>
-                                    ${filterTeacherOptions}
-                                </select>
+                            ` : `
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-bold">${window.AppState.assignedClass || 'Kelas Anda'}</span>
                             `}
+                            <select id="journalTeacherFilter" class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold bg-white outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="">-- Semua Guru --</option>
+                                ${filterTeacherOptions}
+                            </select>
                         </div>
                         <div class="flex gap-2 w-full md:w-auto justify-end">
                             <button id="btnPrintJournalPdf" class="bg-slate-800 hover:bg-slate-900 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow transition flex items-center gap-1.5">
@@ -7945,15 +7941,9 @@ if (globalSem && !globalSem.dataset.initialized) {
                                         <td class="px-3 py-3 text-xs text-slate-600 border border-slate-300"><div class="whitespace-pre-wrap">${j.assessment || '-'}</div></td>
                                         <td class="px-3 py-3 text-xs text-slate-600 border border-slate-300"><div class="whitespace-pre-wrap">${j.reflection || '-'}</div></td>
                                         <td class="px-3 py-3 text-center whitespace-nowrap border border-slate-300">
-                                            <button onclick="window.viewJournal('${j.id}')"
-                                                class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition"
-                                                title="${['teacher','subject_teacher'].includes(window.AppState.role) ? 'Lihat / Edit' : 'Lihat'}">
-                                                <i data-lucide="${['teacher','subject_teacher'].includes(window.AppState.role) ? 'edit-3' : 'eye'}" class="w-4 h-4"></i>
-                                            </button>
-                                            ${['teacher','subject_teacher'].includes(window.AppState.role) ? `
-                                                <button onclick="window.deleteJournal('${j.id}')" class="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition" title="Hapus">
-                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                                </button>
+                                            <button onclick="window.viewJournal('${j.id}')" class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition" title="Lihat / Edit"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                            ${window.AppState.role !== 'principal' ? `
+                                                <button onclick="window.deleteJournal('${j.id}')" class="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition" title="Hapus"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                                             ` : ''}
                                         </td>
                                     </tr>
@@ -8049,14 +8039,13 @@ if (globalSem && !globalSem.dataset.initialized) {
                             <td class="px-4 py-3 text-center whitespace-nowrap border border-slate-300">
 
                                 <button
-                                <button
                                     onclick="window.viewNonTatapMukaJournal('${j.id}')"
                                     class="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition"
-                                    title="${['teacher','subject_teacher'].includes(window.AppState.role) ? 'Lihat / Edit' : 'Lihat'}">
-                                    <i data-lucide="${['teacher','subject_teacher'].includes(window.AppState.role) ? 'edit-3' : 'eye'}" class="w-4 h-4"></i>
+                                    title="Lihat / Edit">
+                                    <i data-lucide="edit-3" class="w-4 h-4"></i>
                                 </button>
 
-                                ${['teacher','subject_teacher'].includes(window.AppState.role) ? `
+                                ${window.AppState.role !== 'principal' ? `
                                     <button
                                         onclick="window.deleteNonTatapMukaJournal('${j.id}')"
                                         class="text-rose-600 hover:text-rose-800 p-1 rounded hover:bg-rose-50 transition"
@@ -8064,6 +8053,7 @@ if (globalSem && !globalSem.dataset.initialized) {
                                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 ` : ''}
+
                             </td>
 
                         </tr>
@@ -8137,10 +8127,10 @@ if (globalSem && !globalSem.dataset.initialized) {
                 const locName = window.AppState.role === 'teacher' ? window.AppState.assignedClass : (window.AppState.selectedClassFilter || 'Semua Kelas');
 
                 let activeTeacherName = window.AppState.selectedTeacherFilter;
-                if (['teacher','subject_teacher'].includes(window.AppState.role)) {
-                    filtered = filtered.filter(d => String(d.teacherId || '') === String(window.AppState.currentTeacherId || ''));
-                } else if (window.AppState.selectedClassFilter) {
-                    filtered = filtered.filter(d => (d.className || d.assignedClass) === window.AppState.selectedClassFilter);
+                if (!activeTeacherName && filtered.length > 0) {
+                    activeTeacherName = filtered[0].teacherName;
+                }
+                if (!activeTeacherName) {
                     const classes = window.AppState.classes || [];
                     const classData = classes.find(c => c.name === locName);
                     activeTeacherName = classData && classData.teacherName !== 'Belum Ditentukan' ? classData.teacherName : null;
@@ -8262,7 +8252,7 @@ const rowsData = semuaRows.map((r, i) => [
     const journal = id ? journals.find(j => j.id === id) : null;
 
     const canManageJournal = ['teacher', 'subject_teacher'].includes(window.AppState.role);
-    const isOwner = !journal || (String(journal.teacherId || '') !== '' && String(journal.teacherId || '') === String(window.AppState.currentTeacherId || ''));
+    const isOwner = !journal || (String(journal.teacherId || '') !== '' && String(journal.teacherId) === String(window.AppState.currentTeacherId || ''));
     if (!id && !canManageJournal) { showToast('Hanya guru yang login yang dapat membuat jurnal nontatap muka.', 'error'); return; }
     const isReadOnly = !canManageJournal || !isOwner;
 
@@ -8584,7 +8574,7 @@ renderCurrentView();
             const teachers = window.AppState.teachers || [];
             const journal = id ? journals.find(j => j.id === id) : null;
             const canManageJournal = ['teacher', 'subject_teacher'].includes(window.AppState.role);
-    const isOwner = !journal || (String(journal.teacherId || '') !== '' && String(journal.teacherId || '') === String(window.AppState.currentTeacherId || ''));
+            const isOwner = !journal || (String(journal.teacherId || '') !== '' && String(journal.teacherId) === String(window.AppState.currentTeacherId || ''));
             if (!id && !canManageJournal) { showToast('Hanya guru yang login yang dapat membuat jurnal mengajar.', 'error'); return; }
             const isReadOnly = !canManageJournal || !isOwner;
             
@@ -11591,40 +11581,31 @@ if (!isPasswordHidden) {
                     return;
                 }
 
-                // Guru Mapel tidak boleh ditolak hanya karena field assignedClass
-                // masih terisi pada data lama. Penentuan Wali Kelas harus berasal
-                // dari penetapan kelas yang benar-benar menunjuk guru tersebut.
-                const teacherId = String(teacher.id || '').trim();
-                const teacherCode = String(
-                    teacher.teacherCode || teacher.guruCode || teacher.kodeGuru || teacher.code || code
-                ).trim().toUpperCase();
-                const teacherName = String(teacher.name || '').trim().toLowerCase();
+                const normalizeClassForMatch = (value) => String(value || '')
+                    .trim()
+                    .toLowerCase()
+                    .replace(/^wali\s+/i, '')
+                    .replace(/^kelas\s+/i, '')
+                    .replace(/\s+/g, ' ');
 
+                const teacherAssigned = String(teacher.assignedClass || '').trim();
                 const isWaliKelas = (window.AppState.classes || []).some(c => {
-                    const classTeacherId = String(
-                        c.teacherId || c.waliKelasId || c.waliKelasTeacherId || ''
-                    ).trim();
-                    const classTeacherCode = String(
-                        c.teacherCode || c.waliKelasCode || ''
-                    ).trim().toUpperCase();
-                    const classTeacherName = String(c.teacherName || c.waliKelas || '').trim().toLowerCase();
-
-                    return (teacherId && classTeacherId && classTeacherId === teacherId) ||
-                           (teacherCode && classTeacherCode && classTeacherCode === teacherCode) ||
-                           (teacherName && classTeacherName && classTeacherName === teacherName);
+                    const className = normalizeClassForMatch(c.name);
+                    const assigned = normalizeClassForMatch(teacherAssigned);
+                    const teacherName = String(c.teacherName || '').trim().toLowerCase();
+                    return (className && assigned && className === assigned) ||
+                           (teacherName && teacherName === String(teacher.name || '').trim().toLowerCase());
                 });
 
                 if (isWaliKelas) {
-                    showToast('Kode ini terdaftar sebagai Wali Kelas. Silakan pilih tab Wali Kelas.', 'error');
+                    showToast('Akses ditolak. Kode ini terdaftar sebagai Wali Kelas. Silakan pilih tab Wali Kelas.', 'error');
                     return;
                 }
 
                 const loginSubjects = getLoggedInTeacherSubjects(teacher);
-                // Data lama dapat menyimpan status Guru Mapel tanpa field mapel.
-                // Jangan memblokir login hanya karena daftar mapel belum terbaca;
-                // pembatasan mapel tetap diterapkan saat membuka Penilaian.
                 if (loginSubjects.length === 0) {
-                    console.warn('Guru Mapel login tanpa daftar mapel yang terbaca:', teacher);
+                    showToast('Akses Guru Mapel belum lengkap. Administrator harus mengisi Mata Pelajaran yang Diampu pada Data Guru.', 'error');
+                    return;
                 }
 
                 window.AppState.assignedClass = '';
@@ -12164,6 +12145,10 @@ window.openSupervisiAdministrasiPembelajaranForm=function(recordId=''){
                 <p class="text-[11px] text-slate-500">Kepala Sekolah dapat memilih instrumen berbeda untuk Wali Kelas/Guru Kelas dan Guru Mapel.</p></div>
                 <button onclick="window.closeModal()" class="p-2 rounded-lg hover:bg-slate-100"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
+            <div id="sap_validation_alert" class="hidden mx-5 mt-3 bg-rose-50 border-2 border-rose-300 text-rose-800 rounded-xl px-4 py-3 shadow-sm flex items-start gap-3" role="alert" aria-live="assertive">
+                <i data-lucide="alert-triangle" class="w-5 h-5 mt-0.5 shrink-0 text-rose-600"></i>
+                <div><div class="font-extrabold text-sm">Peringatan Supervisi</div><div id="sap_validation_message" class="text-xs mt-1 leading-relaxed"></div></div>
+            </div>
             <div class="p-5 max-h-[82vh] overflow-y-auto custom-scrollbar">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
                     <div><label class="block text-xs font-semibold mb-1">Nama Sekolah</label><input id="sap_school" value="${escSAP(window.AppState.schoolInfo.name)}" readonly class="w-full px-3 py-2 border rounded-lg bg-slate-50 text-sm"></div>
@@ -12193,7 +12178,19 @@ window.openSupervisiAdministrasiPembelajaranForm=function(recordId=''){
                 <div class="flex justify-end gap-2 mt-5 pt-4 border-t"><button onclick="window.closeModal()" class="px-4 py-2 rounded-lg border text-xs">Batal</button><button onclick="window.saveSupervisiAdministrasiPembelajaran('${escSAP(recordId)}')" class="px-4 py-2 rounded-lg bg-amber-600 text-white text-xs font-bold"><i data-lucide="save" class="w-4 h-4 inline"></i> Simpan</button></div>
             </div>`;
             openModal();lucide.createIcons();
+            const showSAPValidation=(message)=>{
+                const alertBox=document.getElementById('sap_validation_alert');
+                const messageBox=document.getElementById('sap_validation_message');
+                if(messageBox) messageBox.textContent=String(message||'Periksa kembali isian supervisi.');
+                if(alertBox){ alertBox.classList.remove('hidden'); alertBox.scrollIntoView({behavior:'smooth',block:'start'}); }
+            };
+            const clearSAPValidation=()=>{
+                const alertBox=document.getElementById('sap_validation_alert');
+                if(alertBox) alertBox.classList.add('hidden');
+            };
+            window.__clearSAPValidation=clearSAPValidation;
             document.getElementById('sap_instrument_type')?.addEventListener('change',e=>{
+                clearSAPValidation();
                 const type=e.target.value;
                 const teacherSelect=document.getElementById('sap_teacher');
                 if(teacherSelect){
@@ -12212,14 +12209,29 @@ window.openSupervisiAdministrasiPembelajaranForm=function(recordId=''){
             const instrumentType=document.getElementById('sap_instrument_type')?.value||'wali_kelas';
             const flat=getSAPInstrumentFlat(instrumentType), maxScore=getSAPInstrumentMax(instrumentType);
             const teacherName=document.getElementById('sap_teacher')?.value?.trim();
-            if(!teacherName)return showToast('Silakan pilih Nama Guru.','error');
+            if(!teacherName){
+                if(window.__clearSAPValidation) window.__clearSAPValidation();
+                const alertBox=document.getElementById('sap_validation_alert');
+                const messageBox=document.getElementById('sap_validation_message');
+                if(messageBox) messageBox.textContent='Silakan pilih Nama Guru terlebih dahulu sebelum menyimpan supervisi.';
+                if(alertBox){ alertBox.classList.remove('hidden'); alertBox.scrollIntoView({behavior:'smooth',block:'start'}); }
+                document.getElementById('sap_teacher')?.focus();
+                return;
+            }
             const scores={},notes={};let answered=0,totalScore=0;
             for(let i=1;i<=flat.length;i++){
                 const c=document.querySelector(`input[name="sap_item_${i}"]:checked`);
                 if(c){scores[i]=Number(c.value);answered++;totalScore+=Number(c.value);}
                 notes[i]=document.getElementById(`sap_note_${i}`)?.value?.trim()||'';
             }
-            if(answered<flat.length)return showToast(`Masih ada ${flat.length-answered} indikator yang belum diberi skor.`,'error');
+            if(answered<flat.length){
+                const msg=`Masih ada ${flat.length-answered} indikator yang belum diberi skor. Lengkapi seluruh penilaian pada tabel sebelum menyimpan.`;
+                const alertBox=document.getElementById('sap_validation_alert');
+                const messageBox=document.getElementById('sap_validation_message');
+                if(messageBox) messageBox.textContent=msg;
+                if(alertBox){ alertBox.classList.remove('hidden'); alertBox.scrollIntoView({behavior:'smooth',block:'start'}); }
+                return;
+            }
             const percentage=maxScore?totalScore/maxScore*100:0;
             const data={
                 schoolName:window.AppState.schoolInfo.name||'', teacherName,
@@ -12244,7 +12256,14 @@ window.openSupervisiAdministrasiPembelajaranForm=function(recordId=''){
                 else await addDoc(getPublicColl('supervisiAdministrasiPembelajaran'),data);
                 closeModal();showToast(`Supervisi Administrasi Pembelajaran ${getSAPInstrumentLabel(instrumentType)} berhasil disimpan.`,'success');
                 setTimeout(()=>{if(window.AppState.currentView==='supervisi-administrasi-pembelajaran')renderCurrentView();},150);
-            }catch(err){console.error(err);showToast('Gagal menyimpan: '+err.message,'error');}finally{hideLoading();}
+            }catch(err){
+                console.error(err);
+                const msg='Gagal menyimpan supervisi: '+(err?.message||'Terjadi kesalahan.');
+                const alertBox=document.getElementById('sap_validation_alert');
+                const messageBox=document.getElementById('sap_validation_message');
+                if(messageBox) messageBox.textContent=msg;
+                if(alertBox){ alertBox.classList.remove('hidden'); alertBox.scrollIntoView({behavior:'smooth',block:'start'}); }
+            }finally{hideLoading();}
         };
         window.deleteSupervisiAdministrasiPembelajaran=function(id){const r=(window.AppState.supervisiAdministrasiPembelajaran||[]).find(x=>x.id===id);if(!r)return;showConfirmModal('Hapus Supervisi Administrasi Pembelajaran?',`Data supervisi ${r.teacherName||''} pada ${window.formatHariTanggal(r.date)} akan dihapus.`,async()=>{try{await deleteDoc(getPublicDoc('supervisiAdministrasiPembelajaran',id));showToast('Data supervisi berhasil dihapus.','success');}catch(err){showToast('Gagal menghapus data: '+err.message,'error');}});};
         // ===== EKSPOR EXCEL SUPERVISI AKADEMIK =====
