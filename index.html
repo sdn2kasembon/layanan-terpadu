@@ -1675,21 +1675,64 @@ window.__loginFallbackDisabled = true;
             };
         };
 
-        // Update Opsi Pilihan Kelas pada Form Login Wali Kelas
+        // Penetapan kelas Wali Kelas harus berasal dari data penugasan resmi,
+        // bukan dari pilihan bebas pada form login.
+        function normalizeHomeroomClass(value) {
+            return String(value || '').trim().toLowerCase()
+                .replace(/^wali\\s+kelas\\s*/i, '')
+                .replace(/^wali\\s*/i, '')
+                .replace(/^kelas\\s*/i, '')
+                .replace(/^rombel\\s*/i, '')
+                .replace(/[\\s._-]+/g, '');
+        }
+
+        function getOfficialHomeroomClass(teacher) {
+            if (!teacher) return null;
+            const classes = Array.isArray(window.AppState.classes) ? window.AppState.classes : [];
+            const raw = String(teacher.assignedClass || teacher.className || teacher.kelas || '').trim();
+            const rawKey = normalizeHomeroomClass(raw);
+            const teacherId = String(teacher.id || '').trim();
+            const teacherName = String(teacher.name || '').trim().toLowerCase();
+
+            let assigned = rawKey
+                ? classes.find(c => normalizeHomeroomClass(c.name || c.className || c.kelas) === rawKey)
+                : null;
+
+            if (!assigned) {
+                assigned = classes.find(c => {
+                    const linkedId = String(c.teacherId || c.waliKelasId || c.homeroomTeacherId || '').trim();
+                    const linkedName = String(c.teacherName || c.waliKelas || c.namaWaliKelas || '').trim().toLowerCase();
+                    return (teacherId && linkedId === teacherId) || (teacherName && linkedName === teacherName);
+                });
+            }
+
+            const name = String((assigned && (assigned.name || assigned.className || assigned.kelas)) || raw).trim();
+            return name ? { name, id: String((assigned && assigned.id) || '') } : null;
+        }
+
         function updateLoginClassOptions() {
             const selectEl = document.getElementById('loginAssignedClass');
             if (!selectEl) return;
 
-            // Kelas yang ditawarkan saat login tidak difilter berdasarkan activeYear agar selalu tersedia
-            const classes = window.AppState.classes;
-            if (classes.length === 0) {
-                selectEl.innerHTML = window.PRESET_CLASSES.map(c => `<option value="${c}">${c}</option>`).join('');
-            } else {
-                // Untuk login, tampilkan nama kelas unik agar tidak membingungkan
-                const uniqueClassNames = [...new Set(classes.map(c => c.name))];
-                selectEl.innerHTML = uniqueClassNames.map(c => `<option value="${c}">${c}</option>`).join('');
+            const code = String(document.getElementById('loginTeacherCode')?.value || '').trim().toUpperCase();
+            const teachers = Array.isArray(window.AppState.teachers) ? window.AppState.teachers : [];
+            const teacher = teachers.find(t => String(t.teacherCode || t.guruCode || t.kodeGuru || t.code || '').trim().toUpperCase() === code);
+            const assigned = getOfficialHomeroomClass(teacher);
+
+            if (!assigned) {
+                selectEl.innerHTML = '<option value="">Masukkan kode guru untuk memuat kelas tugas</option>';
+                selectEl.value = '';
+                selectEl.disabled = true;
+                return;
             }
+
+            selectEl.innerHTML = `<option value="${escapeHtml(assigned.name)}">${escapeHtml(assigned.name)}</option>`;
+            selectEl.value = assigned.name;
+            selectEl.disabled = true;
         }
+
+        // Saat kode guru diketik, tampilkan hanya kelas resmi yang ditugaskan kepadanya.
+        document.getElementById('loginTeacherCode')?.addEventListener('input', updateLoginClassOptions);
 
         // Akses langsung Jurnal Karakter 7 KAIH dari halaman awal
         window.openJurnalKarakterFromLogin = function() {
@@ -1714,6 +1757,10 @@ window.__loginFallbackDisabled = true;
         // Role Login Switcher Logic
         window.selectLoginRole = (role) => {
             window.AppState.selectedLoginRole = role;
+            if (role !== 'teacher') {
+                window.AppState.assignedClass = '';
+                window.AppState.assignedClassId = '';
+            }
 
             const tabAdmin = document.getElementById('tabBtnAdmin');
             const tabTeacher = document.getElementById('tabBtnTeacher');
@@ -3062,7 +3109,11 @@ if (globalSem && !globalSem.dataset.initialized) {
                 let filtered = dataList.filter(d => (d.academicYear || '2025/2026') === activeYear);
 
                 if (window.AppState.role === 'teacher') {
-                    filtered = filtered.filter(d => String(d.className || d.assignedClass || '').trim().toLowerCase().replace(/\s+/g, ' ') === String(window.AppState.assignedClass || '').trim().toLowerCase().replace(/\s+/g, ' '));
+                    const assignedKey = normalizeHomeroomClass(window.AppState.assignedClass);
+                    if (!assignedKey) return [];
+                    filtered = filtered.filter(d =>
+                        normalizeHomeroomClass(d.className || d.assignedClass || d.kelas) === assignedKey
+                    );
                 } else if (window.AppState.selectedClassFilter) {
                     filtered = filtered.filter(d => (d.className || d.assignedClass) === window.AppState.selectedClassFilter);
                 }
@@ -6887,7 +6938,7 @@ if (globalSem && !globalSem.dataset.initialized) {
                                         <tr class="hover:bg-slate-50">
                                             <td class="px-4 py-3">${idx + 1}</td>
                                             <td class="px-4 py-3 font-mono text-xs">${s.nis || '-'} / ${s.nisn || '-'}</td>
-                                            <td class="px-4 py-3 font-medium text-slate-900">${s.name || 'Tanpa Nama'}</td>
+                                            <td class="px-4 py-3 font-medium text-slate-900">${s.name || s.nama || s.fullName || s.studentName || 'Tanpa Nama'}</td>
                                             <td class="px-4 py-3"><span class="px-2 py-0.5 rounded bg-blue-100 text-blue-700 text-xs font-semibold">${s.className || 'Tanpa Kelas'}</span></td>
                                             <td class="px-4 py-3">${s.gender || 'L'}</td>
                                             ${window.AppState.role !== 'principal' ? `
@@ -7181,8 +7232,8 @@ if (globalSem && !globalSem.dataset.initialized) {
             const mode = window.AppState.attendanceMode || 'daily';
 
             const canAccessAllAttendanceClasses = ['admin', 'principal'].includes(window.AppState.role);
-            const activeClass = window.AppState.role === 'teacher' 
-                ? (window.AppState.assignedClass || (classes[0]?.name || 'Kelas 1'))
+            const activeClass = window.AppState.role === 'teacher'
+                ? (window.AppState.assignedClass || '')
                 : (window.AppState.selectedClassFilter || (canAccessAllAttendanceClasses ? '__ALL_CLASSES__' : (classes[0]?.name || 'Kelas 1')));
 
             const isAllClassesAttendance = canAccessAllAttendanceClasses && activeClass === '__ALL_CLASSES__';
@@ -7190,6 +7241,9 @@ if (globalSem && !globalSem.dataset.initialized) {
 
             // Ambil murid TA aktif dan cocokkan kelas secara aman.
             // Mendukung data lama yang mungkin memakai className/assignedClass.
+            if (window.AppState.role === 'teacher' && !window.AppState.assignedClass) {
+                students = [];
+            }
             students = (students || []).filter(s => {
                 const studentYear = String(s.academicYear || '2025/2026').trim();
                 if (studentYear !== String(window.AppState.activeYear || '2025/2026').trim()) return false;
@@ -9236,12 +9290,15 @@ const data = {
                     classNames.push(name);
                 }
             };
-            allClasses.forEach(c => addClassName(c.name || c.className || c.kelas));
-            allStudentsForClasses.forEach(s => addClassName(s.className || s.assignedClass || s.kelas || s.class));
-            if (assignedClass) addClassName(assignedClass);
+            if (window.AppState.role === 'teacher') {
+                if (assignedClass) addClassName(assignedClass);
+            } else {
+                allClasses.forEach(c => addClassName(c.name || c.className || c.kelas));
+                allStudentsForClasses.forEach(s => addClassName(s.className || s.assignedClass || s.kelas || s.class));
+            }
             const classOptions = classNames.length === 0
                 ? (window.PRESET_CLASSES || []).map(c => `<option value="${c}">${c}</option>`).join('')
-                : classNames.map(c => `<option value="${c}">${c}</option>`).join('');
+                : classNames.map(c => `<option value="${esc(c)}" ${window.AppState.role === 'teacher' && normalizeClassOption(c) === normalizeClassOption(assignedClass) ? 'selected' : ''}>${esc(c)}</option>`).join('');
 
             const loggedInTeacher = teachers.find(t => String(t.id) === String(window.AppState.currentTeacherId || ''));
             const teacherOptions = canEditAssessment
@@ -9261,7 +9318,7 @@ const data = {
                                 <option value="">-- Pilih Mata Pelajaran --</option>
                                 ${getAssessmentSubjectOptionsHTML()}
                             </select>
-                            <select id="assessClass" class="px-3 py-1.5 border rounded-lg text-sm bg-white">
+                            <select id="assessClass" class="px-3 py-1.5 border rounded-lg text-sm bg-white" ${window.AppState.role === 'teacher' ? 'disabled' : ''}>
                                 <option value="">-- Pilih Kelas --</option>
                                 ${classOptions}
                             </select>
@@ -9323,25 +9380,30 @@ const data = {
             // Wali Kelas diarahkan ke kelasnya. Guru Mapel TIDAK dikunci
             // ke satu kelas: ia berhak memilih seluruh kelas, tetapi hanya
             // dapat menilai mapel yang diampunya.
-            if (window.AppState.role === 'teacher' && classSelect && window.AppState.assignedClass) {
-                const assignedKey = String(window.AppState.assignedClass || '')
-                    .trim().toLowerCase()
-                    .replace(/^wali\s+kelas\s*/i, '')
-                    .replace(/^wali\s*/i, '')
-                    .replace(/^kelas\s*/i, '')
-                    .replace(/^rombel\s*/i, '')
-                    .replace(/[\s._-]+/g, '');
-                const option = Array.from(classSelect.options).find(o => {
-                    const key = String(o.value || '')
-                        .trim().toLowerCase()
-                        .replace(/^wali\s+kelas\s*/i, '')
-                        .replace(/^wali\s*/i, '')
-                        .replace(/^kelas\s*/i, '')
-                        .replace(/^rombel\s*/i, '')
+            if (window.AppState.role === 'teacher' && classSelect) {
+                const assigned = String(window.AppState.assignedClass || '').trim();
+                if (assigned) {
+                    const assignedKey = assigned.toLowerCase()
+                        .replace(/^wali\s+kelas\s*/i, '').replace(/^wali\s*/i, '')
+                        .replace(/^kelas\s*/i, '').replace(/^rombel\s*/i, '')
                         .replace(/[\s._-]+/g, '');
-                    return key === assignedKey || key.includes(assignedKey) || assignedKey.includes(key);
-                });
-                if (option) classSelect.value = option.value;
+                    let option = Array.from(classSelect.options).find(o => {
+                        const key = String(o.value || '').trim().toLowerCase()
+                            .replace(/^wali\s+kelas\s*/i, '').replace(/^wali\s*/i, '')
+                            .replace(/^kelas\s*/i, '').replace(/^rombel\s*/i, '')
+                            .replace(/[\s._-]+/g, '');
+                        return key && key === assignedKey;
+                    });
+                    // Jika opsi kelas tidak terbentuk karena format data kelas berbeda,
+                    // buat satu opsi khusus kelas resmi wali kelas (tetap tidak membuka kelas lain).
+                    if (!option) {
+                        option = document.createElement('option');
+                        option.value = assigned;
+                        option.textContent = assigned;
+                        classSelect.appendChild(option);
+                    }
+                    classSelect.value = option.value;
+                }
             }
 
             // Guru Mapel hanya boleh memilih mapel yang diampu.
@@ -9430,32 +9492,35 @@ if (jumlahNilai > 0) {
                 // tanpa academicYear hilang dari daftar penilaian.
                 const activeYear = String(window.AppState.activeYear || '').trim();
                 const allStudents = Array.isArray(window.AppState.students) ? window.AppState.students : [];
-                const getStudentClassValues = (s) => [
-                    s.className, s.assignedClass, s.kelas, s.class, s.rombel,
-                    s.class_name, s.classNameId, s.classId, s.classID, s.rombelName
-                ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
-                let classStudents = allStudents.filter(s => {
-                    const candidates = getStudentClassValues(s);
-                    return candidates.some(v => normalizeAssessmentClass(v) === selectedClassKey);
-                });
-
-                // Kompatibilitas data lama: bila nama kelas tidak identik, cari kecocokan
-                // dengan bentuk alfanumerik yang sama (mis. "Kelas 1 A" vs "1A").
-                if (classStudents.length === 0) {
-                    classStudents = allStudents.filter(s => {
-                        return getStudentClassValues(s).some(v => {
-                            const key = normalizeAssessmentClass(v);
-                            return key && selectedClassKey && (key === selectedClassKey || key.includes(selectedClassKey) || selectedClassKey.includes(key));
-                        });
+                const allClassRecords = Array.isArray(window.AppState.classes) ? window.AppState.classes : [];
+                const getStudentClassValues = (s) => {
+                    const values = [
+                        s.className, s.assignedClass, s.kelas, s.class, s.rombel,
+                        s.class_name, s.rombelName
+                    ].filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+                    // Sebagian data murid menyimpan ID kelas, bukan nama kelas.
+                    const classIds = [s.classId, s.classID, s.classNameId, s.rombelId, s.kelasId]
+                        .filter(v => v !== undefined && v !== null && String(v).trim() !== '')
+                        .map(String);
+                    classIds.forEach(id => {
+                        const found = allClassRecords.find(c => String(c.id || c.classId || c.docId || '') === id);
+                        if (found) values.push(found.name, found.className, found.kelas);
                     });
-                }
+                    return values.filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+                };
+                const matchesSelectedClass = (student) => getStudentClassValues(student).some(v => {
+                    const key = normalizeAssessmentClass(v);
+                    return key && selectedClassKey && key === selectedClassKey;
+                });
+                let classStudents = allStudents.filter(matchesSelectedClass);
 
-                // FALLBACK TERAKHIR UNTUK GURU: jika struktur field kelas pada data lama
-                // benar-benar berbeda sehingga tidak dapat dicocokkan, jangan tampilkan
-                // tabel kosong. Guru tetap diberi daftar murid yang tersedia agar dapat
-                // melakukan penilaian. Penyimpanan nilai tetap memakai studentId.
-                if (classStudents.length === 0 && window.AppState.role === 'teacher' && allStudents.length > 0) {
-                    classStudents = allStudents.slice();
+                // Kompatibilitas format nama kelas lama, tetapi tetap harus cocok
+                // dengan kelas yang dipilih (tidak pernah mengambil semua murid).
+                if (classStudents.length === 0) {
+                    classStudents = allStudents.filter(s => getStudentClassValues(s).some(v => {
+                        const key = normalizeAssessmentClass(v);
+                        return key && selectedClassKey && (key.includes(selectedClassKey) || selectedClassKey.includes(key));
+                    }));
                 }
 
                 // Guru Mapel tetap wajib memakai kelas yang dipilih.
@@ -9489,7 +9554,7 @@ if (jumlahNilai > 0) {
                 const canEditThisAssessment = canEditAssessment && (sameTeacher || isWaliKelasOwnClass);
 
                 // Pastikan urutan nama siswa selalu A-Z tepat sebelum tabel Penilaian dirender.
-                filteredStudents = [...filteredStudents].sort((a,b) => String(a?.name || a?.nama || a?.fullName || '').trim().localeCompare(String(b?.name || b?.nama || b?.fullName || '').trim(), 'id', {numeric:false, sensitivity:'base'}));
+                filteredStudents = [...filteredStudents].sort((a,b) => String(a?.name || a?.nama || a?.fullName || a?.studentName || '').trim().localeCompare(String(b?.name || b?.nama || b?.fullName || b?.studentName || '').trim(), 'id', {numeric:false, sensitivity:'base'}));
 
                 tableBody.innerHTML = filteredStudents.map((s, i) => {
                     const rec = records[s.id] || { slm: {}, sas: '' };
@@ -9520,6 +9585,12 @@ if (jumlahNilai > 0) {
             subjectSelect?.addEventListener('change', loadAssessmentsTable);
             classSelect?.addEventListener('change', loadAssessmentsTable);
 
+            // Muat otomatis untuk Wali Kelas: kelas resmi langsung terpilih,
+            // sehingga guru tidak perlu memilih kelas lagi setelah login.
+            if (window.AppState.role === 'teacher' && classSelect && subjectSelect && classSelect.value && subjectSelect.value) {
+                loadAssessmentsTable();
+            }
+
             document.getElementById('btnPrintGradePdf')?.addEventListener('click', async () => {
                 const pdfPrintDate = await window.choosePdfPrintDate('Tanggal Cetak PDF Penilaian');
                 if (!pdfPrintDate) return;
@@ -9540,9 +9611,15 @@ if (jumlahNilai > 0) {
                     .replace(/^kelas\s*/i, '')
                     .trim();
                 const selectedPdfClassKey = normalizeAssessmentClassPdf(cls);
-                const pdfStudentsByClass = (window.AppState.students || []).filter(s =>
-                    normalizeAssessmentClassPdf(s.className) === selectedPdfClassKey
-                );
+                const pdfClassRecords = Array.isArray(window.AppState.classes) ? window.AppState.classes : [];
+                const pdfStudentsByClass = (window.AppState.students || []).filter(s => {
+                    const values = [s.className, s.assignedClass, s.kelas, s.class, s.rombel, s.class_name, s.rombelName];
+                    [s.classId, s.classID, s.classNameId, s.rombelId, s.kelasId].filter(v => v != null && String(v).trim()).forEach(id => {
+                        const found = pdfClassRecords.find(c => String(c.id || c.classId || c.docId || '') === String(id));
+                        if (found) values.push(found.name, found.className, found.kelas);
+                    });
+                    return values.some(v => normalizeAssessmentClassPdf(v) === selectedPdfClassKey);
+                });
                 let filteredStudents = pdfStudentsByClass.filter(s => {
                     const studentYear = String(s.academicYear || '').trim();
                     return !studentYear || !window.AppState.activeYear || studentYear === String(window.AppState.activeYear).trim();
@@ -9557,7 +9634,7 @@ if (jumlahNilai > 0) {
                     const sas = document.querySelector(`.sas-input[data-studentid="${s.id}"]`)?.value || '-';
            
                     const akhir = document.querySelector(`.nilai-akhir[data-studentid="${s.id}"]`)?.textContent || '-';
-                    return [i+1, s.name || 'Tanpa Nama', ...slms, sas, akhir];
+                    return [i+1, s.name || s.nama || s.fullName || s.studentName || 'Tanpa Nama', ...slms, sas, akhir];
                 });
 
                 if(rowData.length === 0) return showToast('Tidak ada data nilai untuk dicetak', 'error');
@@ -11576,7 +11653,8 @@ window.registerAdminForm = function () {
         while (Date.now() - started < timeout) {
             const ready = window.__kaihLoginDataReady || {};
             if (targetRole === 'principal' && ready.school) return true;
-            if ((targetRole === 'teacher' || targetRole === 'subject_teacher') && ready.teachers) return true;
+            if (targetRole === 'teacher' && ready.teachers && ready.classes) return true;
+            if (targetRole === 'subject_teacher' && ready.teachers) return true;
             if (targetRole === 'admin') return true;
             await new Promise(resolve => setTimeout(resolve, 200));
         }
@@ -11623,94 +11701,58 @@ if (!isPasswordHidden) {
     }
 }
 
-            if (role === 'teacher') {
+            if (role === 'teacher' || role === 'subject_teacher') {
                 const code = String(document.getElementById('loginTeacherCode').value || '').trim().toUpperCase();
-                const teacher = (window.AppState.teachers || []).find(t =>
-                    String(t.teacherCode || t.guruCode || t.kodeGuru || t.code || '').trim().toUpperCase() === code
-                );
 
-                if (!teacher) {
-                    showToast('Kode Wali Kelas tidak terdaftar! Harap gunakan Kode Guru yang terdaftar pada Data Guru.', 'error');
+                // Kode wajib diisi dan harus cocok persis dengan salah satu Kode Guru
+                // yang tersimpan pada Data Guru di Firestore.
+                if (!code) {
+                    showToast('Masukkan Kode Guru yang terdaftar pada Data Guru.', 'error');
                     return;
                 }
 
-                const normalizeClassForMatch = (value) => String(value || '')
-                    .trim()
-                    .toLowerCase()
-                    .replace(/^wali\s+/i, '')
-                    .replace(/^kelas\s+/i, '')
-                    .replace(/\s+/g, ' ');
-
-                const rawAssignedClass = String(teacher.assignedClass || '').trim();
-                const normalizedTeacherClass = normalizeClassForMatch(rawAssignedClass);
-
-                // Kelas Wali Kelas harus berasal dari penetapan Admin.
-                // Pilihan kelas pada form TIDAK boleh digunakan untuk mengganti
-                // kelas yang sebenarnya ditetapkan kepada guru.
-                const classByTeacher = (window.AppState.classes || []).find(c => {
-                    const className = normalizeClassForMatch(c.name);
-                    const byClassName = className && normalizedTeacherClass && className === normalizedTeacherClass;
-                    const byTeacherName =
-                        String(c.teacherName || '').trim().toLowerCase() ===
-                        String(teacher.name || '').trim().toLowerCase();
-                    return byClassName || byTeacherName;
+                const teacher = (window.AppState.teachers || []).find(t => {
+                    const registeredCode = String(
+                        t.teacherCode || t.guruCode || t.kodeGuru || t.code || ''
+                    ).trim().toUpperCase();
+                    return registeredCode !== '' && registeredCode === code;
                 });
 
-                const assignedClass = String(classByTeacher?.name || '').trim();
-
-                if (!assignedClass) {
-                    showToast('Akses ditolak. Kode ini belum ditetapkan sebagai Wali Kelas oleh Admin. Jika Anda Guru Mata Pelajaran, pilih tab Guru Mapel.', 'error');
-                    return;
-                }
-
-                window.AppState.assignedClass = assignedClass;
-                window.AppState.currentTeacherName = teacher.name || '';
-                window.AppState.currentTeacherCode = teacher.teacherCode || teacher.guruCode || teacher.kodeGuru || teacher.code || code;
-                window.AppState.currentTeacherId = teacher.id || '';
-                window.AppState.kaihLogs = [];
-                if (typeof window.syncKaihLogsForWali === 'function') window.syncKaihLogsForWali();
-
-            } else if (role === 'subject_teacher') {
-                const code = String(document.getElementById('loginTeacherCode').value || '').trim().toUpperCase();
-                const teacher = (window.AppState.teachers || []).find(t =>
-                    String(t.teacherCode || t.guruCode || t.kodeGuru || t.code || '').trim().toUpperCase() === code
-                );
-
                 if (!teacher) {
-                    showToast('Kode Guru Mapel tidak terdaftar! Harap periksa Kode Guru pada Data Guru.', 'error');
+                    showToast(
+                        role === 'subject_teacher'
+                            ? 'Kode Guru Mapel salah atau belum terdaftar pada Data Guru.'
+                            : 'Kode Wali Kelas salah atau belum terdaftar pada Data Guru.',
+                        'error'
+                    );
                     return;
                 }
 
-                const normalizeClassForMatch = (value) => String(value || '')
-                    .trim()
-                    .toLowerCase()
-                    .replace(/^wali\s+/i, '')
-                    .replace(/^kelas\s+/i, '')
-                    .replace(/\s+/g, ' ');
+                // Sinkronkan pilihan kelas sekali lagi setelah data guru selesai dimuat.
+                if (role === 'teacher') updateLoginClassOptions();
 
-                const teacherAssigned = String(teacher.assignedClass || '').trim();
-                const isWaliKelas = (window.AppState.classes || []).some(c => {
-                    const className = normalizeClassForMatch(c.name);
-                    const assigned = normalizeClassForMatch(teacherAssigned);
-                    const teacherName = String(c.teacherName || '').trim().toLowerCase();
-                    return (className && assigned && className === assigned) ||
-                           (teacherName && teacherName === String(teacher.name || '').trim().toLowerCase());
-                });
-
-                if (isWaliKelas) {
-                    showToast('Akses ditolak. Kode ini terdaftar sebagai Wali Kelas. Silakan pilih tab Wali Kelas.', 'error');
-                    return;
-                }
-
-                // Guru Mapel harus dapat LOGIN hanya berdasarkan Kode Guru yang
-                // terdaftar. Data Mata Pelajaran dipakai untuk membatasi fitur
-                // Penilaian setelah login, bukan untuk menggagalkan autentikasi.
-                // Versi lama memblokir login jika nama mapel belum cocok persis
-                // dengan ASSESSMENT_MASTER_SUBJECTS.
                 const loginSubjects = getLoggedInTeacherSubjects(teacher);
                 window.AppState.subjectTeacherSubjects = loginSubjects;
 
-                window.AppState.assignedClass = '';
+                if (role === 'teacher') {
+                    const officialAssignment = getOfficialHomeroomClass(teacher);
+                    const selectedClass = String(document.getElementById('loginAssignedClass')?.value || '').trim();
+                    if (!officialAssignment) {
+                        showToast('Akses ditolak. Admin belum menetapkan kelas Wali Kelas pada Data Guru/Daftar Kelas.', 'error');
+                        return;
+                    }
+                    if (normalizeHomeroomClass(selectedClass) !== normalizeHomeroomClass(officialAssignment.name)) {
+                        showToast('Akses ditolak. Kelas login tidak sesuai dengan penugasan resmi Wali Kelas.', 'error');
+                        return;
+                    }
+                    window.AppState.assignedClass = officialAssignment.name;
+                    window.AppState.assignedClassId = officialAssignment.id || '';
+                } else {
+                    // Guru Mapel tidak dibatasi pada kelas Wali Kelas.
+                    window.AppState.assignedClass = '';
+                    window.AppState.assignedClassId = '';
+                }
+
                 window.AppState.currentTeacherName = teacher.name || '';
                 window.AppState.currentTeacherCode = teacher.teacherCode || teacher.guruCode || teacher.kodeGuru || teacher.code || code;
                 window.AppState.currentTeacherId = teacher.id || '';
