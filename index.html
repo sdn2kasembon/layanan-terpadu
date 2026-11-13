@@ -2051,8 +2051,29 @@ btnRegisterAdmin.classList.remove('hidden');
             onSnapshot(getPublicColl('assessments'), (snap) => {
                 window.AppState.assessments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 safeRender('assessments');
+                safeRender('report-sd'); // Perbarui nilai pada rapor setiap kali Penilaian Sumatif berubah.
                 safeRender('dashboard');
             }, (err) => console.error("Error loading assessments:", err));
+
+            // Deskripsi rapor disimpan terpisah dari dokumen penilaian.
+            onSnapshot(getPublicColl('reportDescriptions'), (snap) => {
+                window.AppState.reportDescriptions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                safeRender('report-sd');
+            }, (err) => console.error("Error loading report descriptions:", err));
+            onSnapshot(getPublicColl('reportClassNotes'), (snap) => {
+                window.AppState.reportClassNotes = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                safeRender('report-sd');
+            }, (err) => console.error("Error loading report class notes:", err));
+            onSnapshot(getPublicColl('reportStudentActivities'), (snap) => {
+                window.AppState.reportStudentActivities = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                safeRender('report-sd');
+            }, (err) => console.error("Error loading report student activities:", err));
+            onSnapshot(getPublicColl('reportTPCustom'), (snap) => {
+                window.AppState.reportTPCustom = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                safeRender('report-sd');
+            }, (err) => console.error("Error loading custom report TP:", err));
+
+
 
             // Health Listener
             onSnapshot(getPublicColl('health'), (snap) => {
@@ -2929,6 +2950,7 @@ if (globalSem && !globalSem.dataset.initialized) {
                 { id: 'journals', label: 'Jurnal Mengajar', icon: 'book-open-check', roles: ['admin', 'teacher', 'principal', 'subject_teacher'] },
                 { id: 'counseling', label: 'Bimbingan & Konseling', icon: 'heart-handshake', roles: ['admin', 'teacher', 'principal'] },
                 { id: 'assessments', label: 'Penilaian Sumatif (Kurmer)', icon: 'award', roles: ['admin', 'teacher', 'principal', 'subject_teacher'] },
+                { id: 'report-sd', label: 'Aplikasi Rapor SD', icon: 'file-text', roles: ['admin', 'teacher', 'principal', 'subject_teacher'] },
                 { id: 'health', label: 'Kesehatan Murid', icon: 'heart-pulse', roles: ['admin', 'teacher', 'principal'] },
                 { id: 'inventory', label: 'Inventaris Barang', icon: 'package', roles: ['admin', 'teacher', 'principal'] },
                 { id: 'teacher-tasks', label: 'Tugas dari Kepala Sekolah', icon: 'clipboard-list', roles: ['teacher', 'subject_teacher'] },
@@ -3093,6 +3115,592 @@ if (globalSem && !globalSem.dataset.initialized) {
                 }, '*');
             } catch (_) {}
         });
+
+
+/* ===== MODUL APLIKASI RAPOR SD TERINTEGRASI ===== */
+window.REPORT_TP_MASTER = {"Pendidikan Pancasila":{"1":["Menyebutkan bunyi dan mengenali simbol sila-sila Pancasila melalui gambar, lagu, dan kegiatan sehari-hari.","Menjelaskan contoh perilaku sesuai sila Pancasila di rumah dan sekolah.","Mengenali aturan sederhana di rumah dan sekolah serta alasan perlunya aturan.","Menyebutkan identitas diri, keluarga, dan teman serta menghargai perbedaan yang terlihat.","Mengenali lingkungan rumah dan sekolah sebagai bagian dari lingkungan tempat tinggal.","Mempraktikkan kerja sama sederhana untuk menjaga kebersihan dan kenyamanan kelas."],"2":["Mengurutkan simbol sila Pancasila dan menceritakan makna sederhana setiap sila.","Memberi contoh dan membiasakan perilaku saling membantu, tertib, dan menghargai sesama.","Membedakan hak dan kewajiban sederhana sebagai anggota keluarga dan warga kelas.","Menceritakan keberagaman identitas, kebiasaan, dan kesukaan teman dengan sikap menghargai.","Mengenali lingkungan tempat tinggal dan sekolah sebagai bagian wilayah Indonesia.","Melaksanakan kesepakatan kelas dan kegiatan gotong royong sederhana."],"3":["Mengidentifikasi makna sila-sila Pancasila dan contoh penerapannya dalam kehidupan sehari-hari.","Menceritakan secara sederhana karakter para perumus Pancasila.","Menjelaskan aturan di sekolah dan lingkungan tempat tinggal serta melaksanakannya.","Mengidentifikasi hak dan kewajiban sebagai anggota keluarga dan warga sekolah.","Membandingkan persamaan dan perbedaan identitas budaya, suku, bahasa, agama, dan kepercayaan di lingkungan sekitar.","Menjelaskan lingkungan RT/RW/desa/kelurahan sebagai bagian wilayah NKRI."],"4":["Menghubungkan makna sila Pancasila dengan contoh perilaku di rumah, sekolah, dan masyarakat.","Meneladani sikap para perumus Pancasila dalam kegiatan belajar dan kerja kelompok.","Menerapkan aturan, hak, dan kewajiban dalam situasi nyata di sekolah dan lingkungan tempat tinggal.","Menunjukkan sikap menghargai keberagaman budaya dan identitas teman melalui tindakan nyata.","Menjelaskan hubungan wilayah tempat tinggal dengan kecamatan dan kabupaten/kota.","Merancang dan melaksanakan kegiatan kerja sama yang memperkuat persatuan di lingkungan sekitar."],"5":["Menyusun kronologi sederhana sejarah kelahiran Pancasila berdasarkan sumber belajar.","Menganalisis keteladanan para perumus Pancasila dan mengaitkannya dengan perilaku di masyarakat.","Menjelaskan hubungan antarsila sebagai satu kesatuan nilai.","Menguraikan makna nilai Pancasila sebagai dasar negara dan pandangan hidup bangsa.","Mengidentifikasi bentuk norma, hak, dan kewajiban dalam kehidupan sebagai warga negara.","Mempraktikkan musyawarah untuk menyusun kesepakatan dan aturan bersama."],"6":["Menyajikan kronologi kelahiran Pancasila dan nilai keteladanan tokoh perumusnya.","Menganalisis keterkaitan sila-sila Pancasila dalam menghadapi persoalan kehidupan sehari-hari.","Menjelaskan contoh penerapan Pancasila sebagai dasar negara dan pandangan hidup bangsa.","Menerapkan hak, kewajiban, dan norma secara bertanggung jawab di rumah, sekolah, dan masyarakat.","Melaksanakan musyawarah dan mengevaluasi pelaksanaan kesepakatan bersama.","Menunjukkan perilaku menjaga persatuan dalam keberagaman serta mengenali peran sebagai warga NKRI."]},"Bahasa Indonesia":{"1":["Mengenali bunyi bahasa, suku kata, dan kata yang sering dijumpai melalui kegiatan menyimak dan berbicara.","Menyimak instruksi lisan sederhana dan melaksanakannya dengan tepat.","Membaca kata dan kalimat sederhana dengan lafal yang dapat dipahami serta menunjukkan pemahamannya.","Menulis huruf, kata, dan kalimat sederhana dengan bentuk huruf terbaca.","Menceritakan pengalaman atau informasi sederhana secara lisan dengan bantuan gambar atau benda.","Mengenali informasi tersurat dari teks pendek yang dibacakan atau dibaca bersama."],"2":["Menyimak cerita atau instruksi sederhana dan menyampaikan kembali informasi penting.","Mengungkapkan gagasan, perasaan, dan pengalaman dalam kalimat sederhana secara santun.","Membaca teks pendek dengan lancar sesuai perkembangan dan menjawab pertanyaan tentang isi teks.","Menemukan tokoh, tempat, urutan peristiwa, dan informasi tersurat dalam teks.","Menulis beberapa kalimat tentang pengalaman atau objek dengan ejaan dasar yang dipelajari.","Menyajikan cerita atau informasi sederhana secara lisan dengan urutan yang jelas."],"3":["Mengidentifikasi ide pokok dan informasi penting dari teks lisan, tulis, dan visual sederhana.","Menyampaikan tanggapan, pertanyaan, dan pendapat dengan santun dalam diskusi.","Membaca nyaring dan membaca pemahaman berbagai teks sesuai tujuan membaca.","Membedakan informasi faktual dan pendapat sederhana dalam teks yang sesuai usia.","Menulis paragraf sederhana dengan urutan gagasan yang logis dan kosakata tepat.","Menyusun teks deskripsi atau narasi sederhana dengan memperhatikan ejaan dan tanda baca."],"4":["Merangkum informasi dari teks informatif, narasi, dan petunjuk dengan bahasa sendiri.","Mempresentasikan hasil pengamatan atau bacaan dengan struktur pembuka, isi, dan penutup.","Membandingkan informasi dari dua teks atau sumber sederhana.","Menjelaskan makna kosakata baru berdasarkan konteks dan sumber rujukan yang sesuai.","Menulis teks prosedur, deskripsi, atau laporan sederhana secara runtut.","Merevisi tulisan berdasarkan kesesuaian isi, pilihan kata, ejaan, dan masukan."],"5":["Menganalisis ide pokok, informasi rinci, hubungan sebab-akibat, dan makna tersirat dalam teks.","Mengevaluasi kesesuaian informasi dan menyampaikan alasan atas tanggapan terhadap teks.","Menggunakan strategi membaca untuk menemukan, membandingkan, dan menyimpulkan informasi.","Menulis teks narasi, deskripsi, eksplanasi, atau laporan sesuai tujuan dan pembaca.","Mengembangkan paragraf dengan gagasan utama, kalimat penjelas, dan kosakata yang bervariasi.","Menyajikan hasil diskusi atau penelitian sederhana secara lisan, tulis, atau multimodal."],"6":["Menyimpulkan dan mengevaluasi informasi dari beragam teks cetak, digital, dan visual.","Menilai kejelasan alasan, fakta, dan sudut pandang dalam teks sesuai konteks.","Menyampaikan pendapat atau hasil kajian secara runtut dengan bukti yang relevan.","Menulis teks dengan struktur, tujuan, dan kaidah kebahasaan yang sesuai.","Menyunting tulisan secara mandiri dari aspek isi, organisasi, kosakata, ejaan, dan tanda baca.","Menghasilkan dan mempresentasikan karya tulis atau multimodal untuk menyampaikan gagasan secara efektif."]},"Matematika":{"1":["Membilang, membaca, menulis, dan membandingkan bilangan cacah sesuai rentang bilangan awal yang dipelajari.","Mengelompokkan benda dan merepresentasikan bilangan dengan benda konkret, gambar, serta simbol.","Menyelesaikan penjumlahan dan pengurangan sederhana menggunakan benda konkret atau gambar.","Mengenali dan melanjutkan pola berulang berdasarkan bentuk, warna, atau bilangan.","Mengenali bangun datar dan bangun ruang sederhana melalui benda di sekitar.","Membandingkan panjang, berat, dan durasi menggunakan istilah serta satuan tidak baku."],"2":["Membaca, menulis, mengurutkan, dan membandingkan bilangan cacah dengan nilai tempat.","Menjelaskan komposisi dan dekomposisi bilangan menggunakan model konkret atau gambar.","Menyelesaikan masalah penjumlahan dan pengurangan serta pengenalan perkalian/pembagian sederhana.","Mengidentifikasi pola bilangan dan pola gambar serta menjelaskan aturan sederhananya.","Mengelompokkan bangun datar dan bangun ruang berdasarkan ciri yang diamati.","Mengukur dan membandingkan panjang, massa, waktu, serta menyajikan data sederhana."],"3":["Memahami nilai tempat dan membandingkan bilangan cacah dalam konteks sehari-hari.","Menggunakan strategi penjumlahan dan pengurangan untuk menyelesaikan masalah kontekstual.","Memahami perkalian sebagai penjumlahan berulang dan pembagian sebagai pengelompokan sama banyak.","Mengenali pecahan sederhana sebagai bagian dari keseluruhan dan membandingkannya secara visual.","Mengidentifikasi sifat bangun datar dan bangun ruang serta menyusun pola geometris.","Mengukur panjang dan waktu dengan satuan baku serta membaca dan menyajikan data dalam tabel/diagram sederhana."],"4":["Melakukan operasi hitung bilangan cacah dan menjelaskan strategi penyelesaiannya.","Menyelesaikan masalah yang melibatkan perkalian dan pembagian dalam konteks sehari-hari.","Membandingkan dan mengurutkan pecahan sederhana serta mengenali pecahan senilai melalui model.","Menggunakan pengukuran panjang, massa, waktu, dan luas sesuai satuan baku yang dipelajari.","Mengidentifikasi ciri, komposisi, dekomposisi, dan hubungan antarbentuk geometri.","Mengumpulkan, mengelompokkan, menyajikan, dan menafsirkan data dalam tabel atau diagram."],"5":["Membaca, menulis, membandingkan, dan mengoperasikan bilangan cacah serta bilangan pecahan/desimal sesuai lingkup fase C.","Menyelesaikan masalah kontekstual yang melibatkan operasi hitung bilangan dan memperkirakan kewajaran hasil.","Menjelaskan hubungan pecahan, desimal, dan persen dalam representasi sederhana.","Menentukan keliling dan luas bangun datar serta menyelesaikan masalah pengukuran.","Mengidentifikasi sifat bangun ruang dan hubungan antarunsur bangun.","Menyajikan dan menafsirkan data serta menentukan kemungkinan kejadian sederhana."],"6":["Memilih dan menerapkan strategi operasi bilangan untuk menyelesaikan masalah multi-langkah.","Menggunakan pecahan, desimal, dan persen untuk membandingkan atau menyelesaikan masalah sehari-hari.","Menyelesaikan masalah perbandingan, skala, atau konteks proporsional sesuai lingkup CP fase C.","Menghitung dan menjelaskan luas/keliling bangun datar serta volume bangun ruang yang dipelajari.","Menggunakan koordinat atau representasi spasial sederhana untuk menjelaskan posisi dan perubahan.","Menganalisis, membandingkan, dan mengomunikasikan informasi dari tabel, diagram, dan data."]},"IPAS":{"3":["Mengamati dan mengelompokkan makhluk hidup serta benda berdasarkan ciri yang dapat diamati.","Menjelaskan kebutuhan dasar makhluk hidup dan hubungan sederhana dengan lingkungannya.","Mengidentifikasi bagian tubuh manusia dan menjelaskan fungsi serta cara merawatnya.","Mengenali wujud zat dan perubahan sederhana melalui pengamatan.","Menjelaskan hubungan antara lingkungan alam dan aktivitas manusia di sekitar.","Melakukan penyelidikan sederhana, mencatat hasil pengamatan, dan menyampaikan kesimpulan."],"4":["Menjelaskan hubungan antarkomponen ekosistem dan dampak perubahan lingkungan.","Mengidentifikasi sumber energi, perubahan bentuk energi, dan pemanfaatannya dalam kehidupan.","Menjelaskan gaya dan pengaruhnya terhadap gerak atau bentuk benda melalui percobaan sederhana.","Menguraikan tahapan daur hidup serta hubungan makhluk hidup dengan habitatnya.","Mengenali keragaman kondisi geografis dan kaitannya dengan kegiatan masyarakat setempat.","Mengolah data hasil pengamatan dan menyajikan penjelasan berdasarkan bukti."],"5":["Menjelaskan sistem organ tubuh yang dipelajari, fungsi, dan upaya menjaga kesehatannya.","Menganalisis hubungan antara komponen biotik dan abiotik dalam ekosistem.","Menjelaskan sifat cahaya/bunyi atau fenomena energi sesuai materi fase C melalui penyelidikan.","Mengidentifikasi perubahan permukaan bumi, sumber daya alam, serta upaya pelestariannya.","Menganalisis kegiatan ekonomi dan interaksi sosial masyarakat di lingkungan sekitar.","Merancang penyelidikan dengan pertanyaan, dugaan, pengamatan, pencatatan data, dan kesimpulan."],"6":["Menghubungkan konsep sistem tubuh, kesehatan, dan kebiasaan hidup sehat berdasarkan bukti.","Menganalisis keterkaitan rantai/jaring makanan, keseimbangan ekosistem, dan dampak aktivitas manusia.","Menjelaskan konsep energi, gaya, serta fenomena alam melalui model atau percobaan sederhana.","Menganalisis perubahan lingkungan dan mengusulkan tindakan pelestarian yang dapat dilakukan.","Menjelaskan keragaman sosial budaya, sejarah lokal, kegiatan ekonomi, dan hubungan antarruang.","Menyajikan hasil investigasi IPAS dalam laporan/presentasi dengan data dan kesimpulan yang logis."]},"PJOK":{"1":["Menirukan variasi gerak lokomotor seperti berjalan, berlari, dan melompat dengan koordinasi dasar.","Mempraktikkan gerak nonlokomotor seperti membungkuk, memutar, dan mengayun secara aman.","Mempraktikkan gerak manipulatif sederhana melalui aktivitas melempar, menangkap, dan menendang.","Mengikuti permainan sederhana dengan aturan dan sikap sportif.","Mengenali bagian tubuh dan kebiasaan menjaga kebersihan diri.","Mempraktikkan kebiasaan keselamatan sederhana sebelum, selama, dan setelah aktivitas gerak."],"2":["Mengombinasikan gerak lokomotor dan nonlokomotor dalam rangkaian aktivitas sederhana.","Mengembangkan keterampilan manipulatif melalui permainan bola atau alat sederhana.","Mempraktikkan gerak berirama mengikuti ketukan atau musik.","Menjelaskan aturan sederhana dan menunjukkan kerja sama dalam permainan.","Menerapkan kebiasaan hidup bersih, makan sehat, istirahat, dan aktivitas fisik.","Mengenali risiko sederhana saat bergerak dan memilih tindakan aman."],"3":["Mempraktikkan variasi dan kombinasi gerak dasar dalam permainan invasi atau permainan sederhana.","Mempraktikkan gerak dasar permainan net/dinding dan permainan lapangan sesuai kemampuan.","Melakukan rangkaian gerak senam lantai atau aktivitas kebugaran dasar dengan aman.","Mengikuti aktivitas gerak berirama dengan koordinasi dan kesesuaian irama.","Menjelaskan manfaat aktivitas jasmani, kebersihan diri, dan pola makan sehat.","Menunjukkan tanggung jawab, kerja sama, dan sportivitas dalam aktivitas jasmani."],"4":["Menerapkan kombinasi gerak dan strategi sederhana dalam berbagai permainan.","Mempraktikkan keterampilan atletik dasar seperti lari, lompat, dan lempar dengan teknik yang sesuai.","Menyusun rangkaian gerak senam atau gerak berirama secara berkelompok.","Melakukan aktivitas kebugaran untuk meningkatkan daya tahan, kekuatan, dan kelenturan sesuai kemampuan.","Mengidentifikasi perilaku pencegahan cedera dan menjaga keselamatan saat berolahraga.","Mengevaluasi kerja sama dan sportivitas diri dalam permainan."],"5":["Menerapkan keterampilan gerak spesifik dan strategi sederhana dalam permainan olahraga.","Mengombinasikan keterampilan atletik, senam, dan gerak berirama dengan kontrol gerak yang baik.","Merancang aktivitas kebugaran sederhana berdasarkan tujuan kebugaran yang sesuai usia.","Menjelaskan hubungan aktivitas fisik, gizi seimbang, istirahat, dan kesehatan.","Mempraktikkan tindakan keselamatan dan pertolongan awal sederhana sesuai arahan guru.","Menunjukkan kepemimpinan, disiplin, dan penghargaan terhadap perbedaan kemampuan."],"6":["Memilih dan menerapkan strategi gerak untuk meningkatkan keberhasilan permainan secara sportif.","Menampilkan rangkaian keterampilan gerak dalam permainan, atletik, senam, atau aktivitas ritmik.","Menyusun dan memantau program aktivitas kebugaran sederhana secara aman.","Menganalisis kebiasaan hidup sehat dan merancang perbaikan perilaku kesehatan.","Menerapkan prinsip keselamatan, pencegahan cedera, dan respons tepat dalam aktivitas jasmani.","Merefleksikan perkembangan keterampilan, kebugaran, tanggung jawab, dan sportivitas."]},"Bahasa Inggris":{"1":["Mengenali dan merespons salam, sapaan, instruksi kelas, dan ungkapan rutin melalui gerak atau kata sederhana.","Menyebutkan kosakata sederhana tentang diri, angka, warna, benda kelas, dan keluarga.","Menirukan bunyi dan ungkapan sederhana dengan dukungan gambar, lagu, atau gerakan."],"2":["Menggunakan ungkapan sederhana untuk memperkenalkan diri dan menyebutkan benda/orang di sekitar.","Memahami instruksi dan pertanyaan sangat sederhana dalam konteks kelas.","Mencocokkan kata atau frasa sederhana dengan gambar serta menyalin kosakata yang dipelajari."],"3":["Memahami informasi umum dari teks lisan sederhana tentang diri dan lingkungan sekitar.","Menggunakan ungkapan sederhana untuk bertanya dan menjawab tentang rutinitas atau benda sekitar.","Membaca kata, frasa, dan teks sangat sederhana dengan bantuan konteks visual.","Menulis kata dan kalimat sederhana tentang topik yang dekat dengan kehidupan murid."],"4":["Menemukan informasi umum dan rinci sederhana dari percakapan atau teks pendek.","Mendeskripsikan orang, benda, tempat, dan kegiatan sehari-hari dengan kalimat sederhana.","Membaca teks pendek dan mengelompokkan informasi sesuai topik.","Menulis teks pendek sederhana dengan kosakata dan pola kalimat yang telah dipelajari."],"5":["Menafsirkan informasi umum dan rinci dari teks lisan/tulis sederhana bertema kehidupan sehari-hari.","Menyampaikan pengalaman, kesukaan, dan informasi lingkungan sekitar secara lisan.","Membaca berbagai teks sederhana dan menyimpulkan informasi penting.","Menulis paragraf pendek dengan urutan gagasan yang dapat dipahami."],"6":["Memahami informasi umum, selektif, dan terperinci dari teks lisan sederhana.","Memproduksi teks lisan sederhana tentang kehidupan sehari-hari dengan pemahaman lintas budaya.","Menafsirkan informasi dari berbagai teks tulis sederhana.","Menulis dan menyajikan teks sederhana dalam bentuk cetak/digital dengan kaidah dasar sesuai konteks."]},"Seni Rupa":{"1":["Mengeksplorasi garis, bentuk, warna, dan tekstur melalui kegiatan menggambar atau membuat karya.","Menggunakan alat dan bahan sederhana dengan memperhatikan keselamatan.","Menceritakan ide atau pengalaman yang menjadi inspirasi karya.","Mengamati dan menyampaikan tanggapan sederhana terhadap karya sendiri dan teman."],"2":["Menggabungkan unsur rupa untuk menyampaikan gagasan atau pengalaman.","Membuat karya dua atau tiga dimensi dengan teknik sederhana.","Memilih alat, bahan, dan warna sesuai gagasan karya.","Mengapresiasi karya dengan menyebutkan bagian yang menarik dan alasannya."],"3":["Mengamati unsur rupa dan prinsip dasar dalam karya atau lingkungan sekitar.","Mengeksplorasi teknik dan media untuk menghasilkan karya dua dimensi.","Membuat karya berdasarkan pengalaman, pengamatan, atau imajinasi.","Merefleksikan proses dan menceritakan makna karya."],"4":["Merancang karya rupa dengan mempertimbangkan tujuan, media, dan teknik.","Menggunakan kombinasi unsur rupa dan teknik untuk menghasilkan karya.","Menampilkan karya dan menjelaskan pilihan visual yang digunakan.","Memberi apresiasi dan saran sederhana terhadap karya teman secara santun."],"5":["Menganalisis unsur dan prinsip rupa dalam karya dari lingkungan atau budaya setempat.","Merencanakan dan membuat karya dengan eksplorasi media/teknik yang lebih beragam.","Mengembangkan gagasan visual untuk menyampaikan pesan atau cerita.","Mengevaluasi proses, hasil, dan kemungkinan perbaikan karya."],"6":["Mengembangkan konsep karya berdasarkan pengamatan, pengalaman, atau isu lingkungan/budaya.","Mewujudkan karya dua/tiga dimensi dengan teknik dan media yang dipilih secara mandiri.","Mempresentasikan proses, gagasan, dan pesan karya dengan alasan yang jelas.","Merefleksikan karya berdasarkan tujuan, proses, tanggapan, dan pengembangan selanjutnya."]},"Seni Musik":{"1":["Mengenali bunyi dari suara, tubuh, dan benda di lingkungan sekitar.","Menirukan pola irama dan melodi pendek melalui suara atau alat musik sederhana.","Menyanyikan lagu anak dengan sikap dan ekspresi yang sesuai.","Menceritakan kesan sederhana setelah mendengarkan musik."],"2":["Membedakan bunyi kuat-lemah, cepat-lambat, dan tinggi-rendah melalui kegiatan musikal.","Mempraktikkan pola irama sederhana secara individu dan berkelompok.","Menyanyikan lagu dengan ketepatan irama dan ekspresi.","Menghargai ragam lagu dan bunyi dari lingkungan sekitar."],"3":["Mengidentifikasi unsur bunyi dan pola irama dalam musik yang didengar.","Memainkan pola irama sederhana menggunakan alat musik atau benda sekitar.","Menyanyikan lagu dengan memperhatikan tempo dan dinamika sederhana.","Menceritakan pengalaman musikal dan memberi tanggapan terhadap penampilan."],"4":["Mengeksplorasi pola ritme, melodi, dan dinamika dalam kegiatan bermusik.","Memainkan atau menciptakan pola musik sederhana secara berkelompok.","Menampilkan lagu atau karya musik dengan koordinasi dan tanggung jawab.","Mengapresiasi keragaman musik daerah dan musik dari lingkungan sekitar."],"5":["Menganalisis unsur musik dan karakter karya dari beberapa konteks budaya.","Merancang pola irama/melodi sederhana untuk mengiringi lagu atau karya.","Memainkan atau menyanyikan karya dengan ekspresi dan kerja sama.","Merefleksikan proses latihan dan kualitas penampilan musik."],"6":["Menciptakan atau mengembangkan karya musik sederhana berdasarkan gagasan tertentu.","Memilih unsur, alat, dan teknik musik untuk mendukung karakter karya.","Mementaskan karya musik secara berkelompok dengan percaya diri.","Menilai dan merefleksikan karya musik sendiri maupun orang lain secara santun."]},"Seni Tari":{"1":["Mengeksplorasi gerak tubuh sederhana berdasarkan pengalaman dan lingkungan.","Menirukan gerak tari sederhana dengan memperhatikan ruang dan tempo.","Mengikuti rangkaian gerak pendek dengan iringan.","Menceritakan kesan terhadap gerak atau tari yang diamati."],"2":["Menggabungkan gerak sederhana menjadi rangkaian gerak tari.","Membedakan penggunaan ruang, tenaga, dan waktu dalam gerak.","Menampilkan rangkaian gerak dengan iringan secara berkelompok.","Menghargai perbedaan gerak dan tari dari lingkungan sekitar."],"3":["Mengamati dan mengidentifikasi unsur gerak tari dari lingkungan/budaya setempat.","Mengeksplorasi variasi gerak berdasarkan ruang, waktu, dan tenaga.","Menyusun rangkaian gerak sederhana berdasarkan tema.","Menceritakan proses dan makna sederhana dari gerak yang ditampilkan."],"4":["Merancang rangkaian gerak tari dengan tema dan urutan yang jelas.","Mengembangkan variasi gerak serta menyesuaikan dengan iringan.","Menampilkan karya tari sederhana dengan kerja sama dan ekspresi.","Memberi tanggapan terhadap karya tari berdasarkan unsur gerak."],"5":["Menganalisis karakter gerak dan unsur tari pada karya yang diamati.","Menciptakan rangkaian gerak berdasarkan gagasan atau budaya setempat.","Mengatur pola lantai, tempo, dan dinamika gerak dalam penampilan.","Merefleksikan proses penciptaan dan penampilan tari."],"6":["Mengembangkan konsep dan koreografi tari sederhana secara kolaboratif.","Memadukan gerak, ruang, waktu, tenaga, dan iringan untuk menyampaikan gagasan.","Mementaskan karya tari dengan tanggung jawab dan percaya diri.","Mengevaluasi karya tari dengan mempertimbangkan gagasan, proses, dan dampaknya."]},"Seni Teater":{"1":["Mengeksplorasi ekspresi wajah, suara, dan gerak tubuh melalui permainan peran.","Menirukan tokoh atau situasi sederhana dari cerita yang dikenal.","Mempraktikkan dialog sangat pendek dengan bimbingan.","Menunjukkan sikap berani, menghargai giliran, dan bekerja sama."],"2":["Menggunakan gerak, ekspresi, dan suara untuk menggambarkan tokoh sederhana.","Memainkan adegan pendek berdasarkan cerita atau pengalaman sehari-hari.","Mengenali perbedaan tokoh, latar, dan peristiwa dalam permainan peran.","Menceritakan pengalaman saat bermain peran dan menghargai penampilan teman."],"3":["Mengidentifikasi tokoh, karakter, alur sederhana, dan situasi dalam cerita.","Mengeksplorasi gestur, ekspresi, dan intonasi untuk membangun karakter.","Menyusun adegan pendek bersama kelompok berdasarkan tema.","Menampilkan permainan peran dan memberi tanggapan sederhana."],"4":["Mengembangkan karakter dan adegan dengan gerak, ekspresi, dan dialog.","Menyusun urutan adegan berdasarkan konflik sederhana dan penyelesaian.","Menggunakan properti sederhana untuk mendukung pertunjukan.","Mengevaluasi kerja sama dan kejelasan pesan dalam pertunjukan."],"5":["Menganalisis karakter, konflik, dan pesan dalam pertunjukan/cerita.","Mengembangkan naskah atau alur adegan pendek secara berkelompok.","Merancang penggunaan properti, kostum, suara, dan ruang pertunjukan sederhana.","Menampilkan pertunjukan dengan ekspresi, artikulasi, dan kolaborasi."],"6":["Menyusun rencana pertunjukan sederhana berdasarkan gagasan atau isu yang dipilih.","Mengembangkan karakter, dialog, gerak, dan ekspresi secara terarah.","Membuat atau memilih properti dan unsur pendukung pertunjukan secara kreatif.","Menampilkan dan merefleksikan pertunjukan dengan percaya diri serta menghargai kontribusi kelompok."]},"Agama dan Budi Pekerti":{"1":["Murid mengenali dan menyebutkan huruf hijaiah berharakat dengan pelafalan yang tepat.","Murid membaca huruf hijaiah bersambung dalam kata atau rangkaian sederhana.","Murid menghafal Surah al-Fatihah dan beberapa surah pendek yang dipelajari.","Murid menyebutkan pesan sederhana hadis tentang kebersihan dan memberi contoh perilaku bersih.","Murid menjelaskan secara sederhana makna rukun iman.","Murid menyebutkan iman kepada Allah Swt. sebagai bagian dari rukun iman.","Murid mengenal beberapa asmaulhusna dan maknanya secara sederhana.","Murid menyebutkan tugas malaikat berdasarkan materi yang dipelajari.","Murid menunjukkan perilaku menyucikan dan memuji Allah Swt. dalam kegiatan sehari-hari.","Murid membiasakan berdoa sebelum dan sesudah kegiatan sesuai tuntunan yang dipelajari.","Murid menunjukkan perilaku baik terhadap diri sendiri, seperti menjaga kebersihan dan kerapian.","Murid membedakan contoh perilaku terpuji dan perilaku yang perlu dihindari.","Murid menyebutkan lima rukun Islam dan menjelaskan syahadatain secara sederhana.","Murid mempraktikkan tata cara bersuci sederhana sesuai tuntunan yang dipelajari.","Murid mengenali urutan gerakan dan bacaan pokok salat fardu.","Murid mempraktikkan zikir dan doa sederhana setelah salat.","Murid menceritakan secara sederhana kisah keteladanan seorang nabi atau rasul yang dipelajari.","Murid menyebutkan sifat teladan dari nabi dan rasul dalam kisah yang dipelajari.","Murid menghubungkan satu keteladanan nabi atau rasul dengan perilaku baik di rumah atau sekolah."],"2":["Murid membaca dan membedakan huruf hijaiah berharakat serta huruf hijaiah bersambung dengan lebih lancar.","Murid menghafal Surah al-Fatihah dan beberapa surah pendek dengan urutan dan pelafalan yang tepat.","Murid menjelaskan pesan hadis tentang kebersihan dengan bahasa sederhana.","Murid menunjukkan kebiasaan menjaga kebersihan sebagai penerapan hadis yang dipelajari.","Murid menjelaskan rukun iman dan menunjukkan keyakinan terhadap rukun iman dalam perilaku sehari-hari.","Murid menjelaskan iman kepada Allah Swt. dan beberapa asmaulhusna yang dipelajari.","Murid menjelaskan secara sederhana iman kepada malaikat dan beberapa tugasnya.","Murid mengenali beberapa asmaulhusna serta mengaitkannya dengan kebesaran Allah Swt.","Murid membiasakan menyucikan dan memuji Allah Swt. melalui doa dan ungkapan yang sesuai.","Murid menunjukkan akhlak baik terhadap diri sendiri secara konsisten.","Murid memberikan contoh perilaku bersyukur dan taat kepada Allah Swt.","Murid membiasakan perilaku santun dan bertanggung jawab dalam kegiatan sehari-hari.","Murid menjelaskan rukun Islam dan makna syahadatain secara sederhana.","Murid mempraktikkan tata cara bersuci dengan urutan yang benar.","Murid mempraktikkan salat fardu sesuai gerakan dan bacaan pokok yang dipelajari.","Murid melafalkan zikir dan doa setelah salat dengan tertib.","Murid menceritakan kisah keteladanan beberapa nabi dan rasul yang dipelajari.","Murid mengidentifikasi sikap terpuji dari kisah nabi dan rasul.","Murid meneladani sikap sabar, jujur, dan taat yang terdapat dalam kisah nabi dan rasul."],"3":["Murid membaca dan menulis huruf hijaiah bersambung dengan tepat.","Murid membedakan bentuk huruf hijaiah bersambung dalam berbagai posisi.","Murid menghafal beberapa surah pendek dan menjelaskan pesan pokoknya.","Murid menjelaskan hadis tentang kewajiban salat dan menjaga hubungan baik dengan sesama.","Murid menjelaskan sifat-sifat Allah Swt. yang dipelajari dan maknanya.","Murid menjelaskan iman kepada kitab-kitab Allah Swt.","Murid menyebutkan beberapa asmaulhusna beserta maknanya.","Murid menjelaskan makna iman kepada rasul-rasul Allah Swt.","Murid menunjukkan sikap berbaik sangka kepada Allah Swt. dalam keadaan sehari-hari.","Murid menerapkan perilaku hormat dan patuh kepada orang tua.","Murid menunjukkan akhlak terpuji kepada anggota keluarga dan guru.","Murid memberikan contoh perilaku yang mencerminkan hubungan baik dengan sesama.","Murid menjelaskan makna azan dan ikamah serta waktu penggunaannya.","Murid mempraktikkan atau melafalkan azan dan ikamah sesuai tuntunan yang dipelajari.","Murid menjelaskan ketentuan dasar salat Jumat dan salat sunah.","Murid menjelaskan makna balig dan tanggung jawab (taklif) secara sederhana.","Murid menceritakan kehidupan Nabi Muhammad saw. sebelum diangkat menjadi rasul.","Murid menceritakan peristiwa penting dalam kehidupan Nabi Muhammad saw. periode Makkah.","Murid menjelaskan keteladanan Nabi Muhammad saw. sebelum dan sesudah diangkat menjadi rasul."],"4":["Murid membaca dan menulis huruf hijaiah bersambung secara benar dan lebih lancar.","Murid menghafal beberapa surah pendek dengan memperhatikan ketepatan bacaan.","Murid menjelaskan kandungan atau pesan pokok surah pendek yang dipelajari.","Murid menjelaskan hadis tentang kewajiban salat dan menjaga hubungan baik dengan sesama serta memberi contoh penerapannya.","Murid menjelaskan sifat-sifat Allah Swt. dan mengaitkannya dengan kebesaran serta kekuasaan-Nya.","Murid menjelaskan fungsi beriman kepada kitab-kitab Allah Swt.","Murid menguraikan makna beberapa asmaulhusna yang dipelajari.","Murid menjelaskan peran rasul-rasul Allah Swt. dan menunjukkan sikap beriman kepada mereka.","Murid menerapkan sikap berbaik sangka kepada Allah Swt. dalam menghadapi berbagai keadaan.","Murid membiasakan hormat, patuh, dan santun kepada orang tua.","Murid menerapkan akhlak terpuji kepada keluarga dan guru dalam tindakan nyata.","Murid menunjukkan perilaku tanggung jawab dan menjaga hubungan baik dengan orang lain.","Murid menjelaskan ketentuan azan dan ikamah serta melafalkannya dengan benar.","Murid menjelaskan ketentuan salat Jumat dan salat sunah yang dipelajari.","Murid membedakan salat Jumat dan salat sunah berdasarkan ketentuan dasarnya.","Murid menjelaskan tanda balig dan tanggung jawab ibadah yang menyertainya (taklif).","Murid menjelaskan peristiwa penting dalam kehidupan Nabi Muhammad saw. periode Makkah.","Murid mengurutkan beberapa peristiwa penting dalam dakwah Nabi Muhammad saw. periode Makkah.","Murid menyimpulkan keteladanan Nabi Muhammad saw. dari perjuangan dakwah periode Makkah."],"5":["Murid membaca dan menulis huruf hijaiah bersambung dengan benar.","Murid menjelaskan pesan beberapa surah pendek yang dipelajari.","Murid menjelaskan hadis tentang berbuat baik kepada orang tua, guru, dan teman.","Murid menunjukkan perilaku berbuat baik kepada orang tua, guru, dan teman berdasarkan pesan hadis.","Murid menjelaskan beberapa asmaulhusna beserta maknanya.","Murid menjelaskan makna iman kepada hari akhir.","Murid menguraikan contoh perilaku yang mencerminkan keyakinan terhadap hari akhir.","Murid menjelaskan pengertian qada dan qadar secara sederhana.","Murid membiasakan berdoa kepada Allah Swt. dalam kegiatan sehari-hari.","Murid menunjukkan sikap tawakal kepada Allah Swt. setelah berusaha.","Murid menerapkan akhlak baik kepada teman dan tetangga.","Murid menunjukkan sikap santun dan menghargai nonmuslim, serta menyayangi hewan dan tumbuhan.","Murid menjelaskan ketentuan puasa wajib dan puasa sunah yang dipelajari.","Murid membedakan puasa wajib dan puasa sunah berdasarkan ketentuannya.","Murid mengidentifikasi makanan dan minuman yang halal dan haram berdasarkan materi yang dipelajari.","Murid menjelaskan pengertian dan tujuan zakat, infak, sedekah, dan wakaf.","Murid menceritakan peristiwa penting kehidupan Nabi Muhammad saw. periode Madinah.","Murid menjelaskan keteladanan Nabi Muhammad saw. dalam membangun kehidupan masyarakat Madinah.","Murid menceritakan secara berurutan kisah Khulafaurasyidin yang dipelajari."],"6":["Murid membaca dan menulis huruf hijaiah bersambung secara tepat dan lancar.","Murid menjelaskan pesan pokok beberapa surah pendek yang dipelajari.","Murid menjelaskan hadis tentang berbuat baik kepada orang tua, guru, dan teman.","Murid menerapkan pesan surah dan hadis yang dipelajari dalam perilaku sehari-hari.","Murid menjelaskan beberapa asmaulhusna dan mengaitkannya dengan perilaku beriman.","Murid menjelaskan iman kepada hari akhir beserta contoh perilaku yang mencerminkannya.","Murid menjelaskan makna qada dan qadar serta hubungan ikhtiar, doa, dan tawakal.","Murid menunjukkan sikap menerima ketentuan Allah Swt. disertai usaha dan tanggung jawab.","Murid menerapkan doa dan tawakal kepada Allah Swt. dalam berbagai kegiatan.","Murid menunjukkan akhlak terpuji kepada teman dan tetangga dalam kehidupan sehari-hari.","Murid menerapkan sikap menghargai dan menghormati nonmuslim dalam kehidupan bermasyarakat.","Murid menunjukkan kepedulian terhadap hewan dan tumbuhan melalui tindakan nyata.","Murid menjelaskan dan menerapkan ketentuan puasa wajib dan puasa sunah.","Murid mengidentifikasi contoh makanan dan minuman halal serta haram beserta alasannya sesuai materi.","Murid menjelaskan perbedaan zakat, infak, sedekah, dan wakaf.","Murid memberikan contoh penerapan zakat, infak, sedekah, dan wakaf dalam kehidupan.","Murid menceritakan dan menjelaskan kisah Nabi Muhammad saw. periode Madinah.","Murid menjelaskan peristiwa penting dan keteladanan Nabi Muhammad saw. dalam periode Madinah.","Murid menceritakan dan menjelaskan kisah Khulafaurasyidin.","Murid menyimpulkan nilai keteladanan dari kepemimpinan Khulafaurasyidin."]},"Bahasa Daerah":{"1":["mengidentifikasi bunyi huruf, suku kata, dan kata dalam bahasa daerah yang berkaitan dengan anggota tubuh.","mengidentifikasi kata kerja dalam ragam bahasa ngoko dan krama","memahami informasi dari dongeng yang dibacakan atau didengarkan.","memahami isi tembang dolanan atau lagu permainan daerah yang didengarkan.","memahami instruksi lisan sederhana dalam kehidupan sehari-hari.","mengidentifikasi informasi dalam percakapan sederhana tentang diri sendiri, keluarga, dan lingkungan sekolah.","mengenali dan membaca kata-kata sederhana dalam bahasa daerah yang digunakan sehari-hari.","membaca teks dongeng sederhana dengan bimbingan guru.","mengidentifikasi informasi dari teks deskripsi sederhana tentang diri sendiri dan lingkungan terdekat.","memahami isi puisi anak sederhana dalam bahasa daerah.","menemukan informasi dari gambar atau tayangan tentang keluarga, sekolah, dan masyarakat.","menjelaskan makna kosakata baru berdasarkan ilustrasi atau gambar yang menyertainya.","memperkenalkan diri menggunakan bahasa daerah dengan santun.","menyebutkan nama anggota keluarga dan bagian tubuh menggunakan bahasa daerah.","menggunakan ungkapan sederhana sesuai unggah-ungguh basa atau onḍhâgghâ bhâsa.","bertanya dan menjawab pertanyaan sederhana dalam percakapan sehari-hari.","mengungkapkan gagasan secara lisan berdasarkan gambar atau ilustrasi.","menceritakan kembali isi dongeng atau informasi yang didengar dengan bahasa sederhana.","melagukan tembang dolanan atau kèjhung èn-maènan dengan benar.","memegang alat tulis dan menggunakan posisi duduk yang benar ketika menulis.","menebalkan garis, huruf, dan bentuk sederhana dengan benar.","menulis huruf dan kata sederhana menggunakan huruf Latin.","menulis beberapa kalimat sederhana untuk mendeskripsikan diri sendiri dan lingkungan sekitar.","menulis cerita sederhana berdasarkan pengalaman pribadi.","menulis kembali cerita berdasarkan dongeng yang dibaca atau didengar.","menulis petunjuk sederhana tentang kegiatan sehari-hari.","menulis kalimat sederhana untuk menyampaikan informasi tentang kehidupan sehari-hari."],"2":["mengidentifikasi bunyi huruf, suku kata, dan kata dalam bahasa daerah yang berkaitan dengan anggota tubuh.","mengidentifikasi kata kerja dalam ragam bahasa ngoko dan krama","memahami informasi dari dongeng yang dibacakan atau didengarkan.","memahami isi tembang dolanan atau lagu permainan daerah yang didengarkan.","memahami instruksi lisan sederhana dalam kehidupan sehari-hari.","mengidentifikasi informasi dalam percakapan sederhana tentang diri sendiri, keluarga, dan lingkungan sekolah.","mengenali dan membaca kata-kata sederhana dalam bahasa daerah yang digunakan sehari-hari.","membaca teks dongeng sederhana dengan bimbingan guru.","mengidentifikasi informasi dari teks deskripsi sederhana tentang diri sendiri dan lingkungan terdekat.","memahami isi puisi anak sederhana dalam bahasa daerah.","menemukan informasi dari gambar atau tayangan tentang keluarga, sekolah, dan masyarakat.","menjelaskan makna kosakata baru berdasarkan ilustrasi atau gambar yang menyertainya.","memperkenalkan diri menggunakan bahasa daerah dengan santun.","menyebutkan nama anggota keluarga dan bagian tubuh menggunakan bahasa daerah.","menggunakan ungkapan sederhana sesuai unggah-ungguh basa atau onḍhâgghâ bhâsa.","bertanya dan menjawab pertanyaan sederhana dalam percakapan sehari-hari.","mengungkapkan gagasan secara lisan berdasarkan gambar atau ilustrasi.","menceritakan kembali isi dongeng atau informasi yang didengar dengan bahasa sederhana.","melagukan tembang dolanan atau kèjhung èn-maènan dengan benar.","memegang alat tulis dan menggunakan posisi duduk yang benar ketika menulis.","menebalkan garis, huruf, dan bentuk sederhana dengan benar.","menulis huruf dan kata sederhana menggunakan huruf Latin.","menulis beberapa kalimat sederhana untuk mendeskripsikan diri sendiri dan lingkungan sekitar.","menulis cerita sederhana berdasarkan pengalaman pribadi.","menulis kembali cerita berdasarkan dongeng yang dibaca atau didengar.","menulis petunjuk sederhana tentang kegiatan sehari-hari.","menulis kalimat sederhana untuk menyampaikan informasi tentang kehidupan sehari-hari."],"3":["mengidentifikasi ide pokok dari pesan lisan yang didengar.","menemukan informasi penting dari media audio dan teks yang dibacakan.","memahami instruksi lisan yang berkaitan dengan kegiatan sehari-hari.","mengidentifikasi isi dan pesan moral dari dongeng anak yang didengar.","mengenali aksara Jawa legena dan sandhangan swara atau aksara ghâjâng, sanḍhângan.","mengidentifikasi makna basa rinengga (entar, saroja, garba)  dari teks yang didengar.","membaca teks berbahasa daerah dengan lafal dan intonasi yang tepat.","memahami informasi dalam teks tentang kehidupan sehari-hari.","mengidentifikasi ide pokok dan ide pendukung dalam teks informatif.","menjelaskan karakter dan permasalahan tokoh dalam teks dongeng anak.","menemukan makna kosakata baru berdasarkan konteks bacaan atau tayangan.","membaca kata dan kalimat sederhana menggunakan aksara Jawa","mengidentifikasi dan menjelaskan makna basa rinengga atau lalongèt dalam teks yang dibaca.","memahami isi dan pesan dalam puisi anak berbahasa daerah.","menggunakan bahasa daerah dengan pilihan kata, sikap tubuh, dan gestur yang santun.","menerapkan unggah-ungguh basa  ketika berbicara dengan teman sebaya dan orang yang lebih tua.","mengajukan dan menjawab pertanyaan dalam percakapan menggunakan bahasa daerah.","menyampaikan tanggapan dan pendapat dalam diskusi secara santun.","mengungkapkan gagasan secara mandiri maupun berkelompok menggunakan bahasa daerah.","menceritakan kembali informasi dari teks narasi yang dibaca atau didengar.","melagukan tembang dolanan  sesuai irama dan pelafalan.","menulis tegak bersambung dengan bentuk huruf dan jarak yang tepat.","menyusun teks narasi sederhana berdasarkan pengalaman atau cerita yang dibaca.","menulis teks deskripsi tentang benda, tempat, dan lingkungan sekitar secara terperinci.","menulis teks rekon tentang pengalaman pribadi dengan urutan peristiwa yang runtut.","menulis teks prosedur sederhana tentang kegiatan sehari-hari.","menulis teks eksposisi sederhana untuk menyampaikan informasi.","menulis kata dan kalimat sederhana menggunakan aksara Jawa legena dan sandhangan swara  beserta sandhangan.","mengembangkan kosakata bahasa daerah melalui kegiatan menulis berbagai jenis teks."],"4":["mengidentifikasi ide pokok dari pesan lisan yang didengar.","menemukan informasi penting dari media audio dan teks yang dibacakan.","memahami instruksi lisan yang berkaitan dengan kegiatan sehari-hari.","mengidentifikasi isi dan pesan moral dari dongeng anak yang didengar.","mengenali aksara Jawa legena dan sandhangan swara atau aksara ghâjâng, sanḍhângan.","mengidentifikasi makna basa rinengga (entar, saroja, garba)  dari teks yang didengar.","membaca teks berbahasa daerah dengan lafal dan intonasi yang tepat.","memahami informasi dalam teks tentang kehidupan sehari-hari.","mengidentifikasi ide pokok dan ide pendukung dalam teks informatif.","menjelaskan karakter dan permasalahan tokoh dalam teks dongeng anak.","menemukan makna kosakata baru berdasarkan konteks bacaan atau tayangan.","membaca kata dan kalimat sederhana menggunakan aksara Jawa","mengidentifikasi dan menjelaskan makna basa rinengga atau lalongèt dalam teks yang dibaca.","memahami isi dan pesan dalam puisi anak berbahasa daerah.","menggunakan bahasa daerah dengan pilihan kata, sikap tubuh, dan gestur yang santun.","menerapkan unggah-ungguh basa  ketika berbicara dengan teman sebaya dan orang yang lebih tua.","mengajukan dan menjawab pertanyaan dalam percakapan menggunakan bahasa daerah.","menyampaikan tanggapan dan pendapat dalam diskusi secara santun.","mengungkapkan gagasan secara mandiri maupun berkelompok menggunakan bahasa daerah.","menceritakan kembali informasi dari teks narasi yang dibaca atau didengar.","melagukan tembang dolanan  sesuai irama dan pelafalan.","menulis tegak bersambung dengan bentuk huruf dan jarak yang tepat.","menyusun teks narasi sederhana berdasarkan pengalaman atau cerita yang dibaca.","menulis teks deskripsi tentang benda, tempat, dan lingkungan sekitar secara terperinci.","menulis teks rekon tentang pengalaman pribadi dengan urutan peristiwa yang runtut.","menulis teks prosedur sederhana tentang kegiatan sehari-hari.","menulis teks eksposisi sederhana untuk menyampaikan informasi.","menulis kata dan kalimat sederhana menggunakan aksara Jawa legena dan sandhangan swara  beserta sandhangan.","mengembangkan kosakata bahasa daerah melalui kegiatan menulis berbagai jenis teks."],"5":["mengidentifikasi fakta dan informasi penting dari berbagai teks informatif dan fiksi yang didengar.","menganalisis ciri-ciri objek berdasarkan informasi dalam teks yang didengarkan.","mengurutkan tahapan proses atau peristiwa berdasarkan teks prosedur yang didengar.","mengidentifikasi nilai-nilai moral dan budaya dalam cerita rakyat sederhana daerah setempat.","memparafrasekan isi tembang macapat Pucung, Gambuh, dan Kinanthi.","menganalisis makna basa rinengga (paribasan, bebasan, dan saloka) dalam teks yang didengar.","membaca teks bahasa daerah dengan lancar, fasih, dan memperhatikan keindahan pelafalan.","mengidentifikasi ide pokok dan informasi penting dalam teks deskripsi.","mengidentifikasi ide pokok dan informasi penting dalam teks narasi berupa cerita rakyat daerah setempat.","mengidentifikasi ide pokok dan informasi penting dalam teks eksposisi.","menganalisis nilai-nilai moral dan budaya yang terkandung dalam cerita rakyat daerah.","menjelaskan makna kosakata denotatif, konotatif, literal, dan kiasan dalam teks.","mengidentifikasi dan menjelaskan makna basa rinengga atau lalongèt dalam berbagai teks.","membaca teks menggunakan aksara Jawa pasangan.","menyampaikan informasi secara lisan untuk tujuan menghibur dan meyakinkan orang lain dengan bahasa daerah yang santun.","menggunakan kosakata bermakna denotatif, konotatif, dan kiasan dalam komunikasi.","menerapkan pilihan kata sesuai norma budaya dan unggah-ungguh basa atau èngghi bhunten.","menyampaikan pendapat dan perasaan berdasarkan fakta maupun imajinasi secara runtut dan menarik.","menyampaikan gagasan dan hasil pengamatan secara logis, sistematis, efektif, dan kritis.","mempresentasikan hasil pengalaman dan pengamatan menggunakan bahasa daerah dengan percaya diri.","menyampaikan imajinasi dalam bentuk prosa atau puisi menggunakan kosakata secara kreatif.","melagukan tembang macapat Pucung, Gambuh, dan Kinanthi.","menulis teks menggunakan kaidah kebahasaan dan kesastraan sesuai konteks serta norma budaya daerah.","menggunakan kosakata bermakna denotatif, konotatif, dan kiasan dalam tulisan.","menulis teks prosa berdasarkan fakta, pengalaman, dan imajinasi secara runtut dan kreatif.","menulis puisi atau geguritan menggunakan pilihan kata yang indah dan sesuai konteks.","mengembangkan gagasan dan perasaan dalam bentuk prosa dan puisi dengan kosakata yang kreatif.","menulis aksara Jawa menggunakan pasangan dan sandhangan sesuai kaidah."],"6":["mengidentifikasi fakta dan informasi penting dari berbagai teks informatif dan fiksi yang didengar.","menganalisis ciri-ciri objek berdasarkan informasi dalam teks yang didengarkan.","mengurutkan tahapan proses atau peristiwa berdasarkan teks prosedur yang didengar.","mengidentifikasi nilai-nilai moral dan budaya dalam cerita rakyat sederhana daerah setempat.","memparafrasekan isi tembang macapat Pucung, Gambuh, dan Kinanthi.","menganalisis makna basa rinengga (paribasan, bebasan, dan saloka) dalam teks yang didengar.","membaca teks bahasa daerah dengan lancar, fasih, dan memperhatikan keindahan pelafalan.","mengidentifikasi ide pokok dan informasi penting dalam teks deskripsi.","mengidentifikasi ide pokok dan informasi penting dalam teks narasi berupa cerita rakyat daerah setempat.","mengidentifikasi ide pokok dan informasi penting dalam teks eksposisi.","menganalisis nilai-nilai moral dan budaya yang terkandung dalam cerita rakyat daerah.","menjelaskan makna kosakata denotatif, konotatif, literal, dan kiasan dalam teks.","mengidentifikasi dan menjelaskan makna basa rinengga atau lalongèt dalam berbagai teks.","membaca teks menggunakan aksara Jawa pasangan.","menyampaikan informasi secara lisan untuk tujuan menghibur dan meyakinkan orang lain dengan bahasa daerah yang santun.","menggunakan kosakata bermakna denotatif, konotatif, dan kiasan dalam komunikasi.","menerapkan pilihan kata sesuai norma budaya dan unggah-ungguh basa atau èngghi bhunten.","menyampaikan pendapat dan perasaan berdasarkan fakta maupun imajinasi secara runtut dan menarik.","menyampaikan gagasan dan hasil pengamatan secara logis, sistematis, efektif, dan kritis.","mempresentasikan hasil pengalaman dan pengamatan menggunakan bahasa daerah dengan percaya diri.","menyampaikan imajinasi dalam bentuk prosa atau puisi menggunakan kosakata secara kreatif.","melagukan tembang macapat Pucung, Gambuh, dan Kinanthi.","menulis teks menggunakan kaidah kebahasaan dan kesastraan sesuai konteks serta norma budaya daerah.","menggunakan kosakata bermakna denotatif, konotatif, dan kiasan dalam tulisan.","menulis teks prosa berdasarkan fakta, pengalaman, dan imajinasi secara runtut dan kreatif.","menulis puisi atau geguritan menggunakan pilihan kata yang indah dan sesuai konteks.","mengembangkan gagasan dan perasaan dalam bentuk prosa dan puisi dengan kosakata yang kreatif.","menulis aksara Jawa menggunakan pasangan dan sandhangan sesuai kaidah."]}};
+window.AppState.reportDescriptions = window.AppState.reportDescriptions || [];
+window.AppState.reportClassNotes = window.AppState.reportClassNotes || [];
+window.AppState.reportStudentActivities = window.AppState.reportStudentActivities || [];
+window.AppState.reportTPCustom = window.AppState.reportTPCustom || [];
+window.ReportUI = window.ReportUI || {
+  year: window.AppState.activeYear || '',
+  semester: window.AppState.activeSemester || 'Genap',
+  className: '',
+  subject: 'Bahasa Indonesia',
+  studentId: '',
+  printDate: new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-'+String(new Date().getDate()).padStart(2,'0')
+};
+function reportEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function reportNorm(v){return String(v||'').trim().toLowerCase().replace(/^wali\s+kelas\s*/i,'').replace(/^wali\s*/i,'').replace(/^kelas\s*/i,'').replace(/^rombel\s*/i,'').replace(/[\s._-]+/g,'');}
+function reportStudentName(s){return s?.name||s?.nama||s?.fullName||s?.studentName||'Tanpa Nama';}
+function reportStudentClass(s){return s?.className||s?.assignedClass||s?.kelas||s?.class||'';}
+function reportStudentYear(s){return s?.academicYear||s?.tahunAjaran||'';}
+function reportIsEditable(){
+  const r=window.AppState.role;
+  return ['admin','teacher','subject_teacher'].includes(r);
+}
+function reportCanEditClass(cls){
+  const r=window.AppState.role;
+  if(r==='admin') return true;
+  if(r==='teacher') return reportNorm(cls)===reportNorm(window.AppState.assignedClass||'');
+  return r==='subject_teacher';
+}
+function reportCanEditSubject(subj){
+  if(window.AppState.role!=='subject_teacher') return true;
+  return typeof isSubjectTeacherAllowedSubject==='function' ? isSubjectTeacherAllowedSubject(subj) : getLoggedInTeacherSubjects().some(x=>x===subj);
+}
+function reportCanonicalSubject(subject){
+  const raw=String(subject||'').trim();
+  const stripped=raw.replace(/^guru\s+/i,'').trim();
+  const normalized=normalizeAssessmentSubject(stripped);
+  if(/^(pai|pendidikan agama islam|pendidikan agama islam dan budi pekerti|pendidikan agama dan budi pekerti|agama islam dan budi pekerti|agama dan budi pekerti)$/.test(normalized) || (normalized.includes('agama islam') && normalized.includes('budi pekerti'))){
+    return 'Agama dan Budi Pekerti';
+  }
+  if(/^(pjok|pendidikan jasmani olahraga dan kesehatan|pendidikan jasmani, olahraga, dan kesehatan)$/.test(normalized) || normalized.startsWith('pendidikan jasmani')) return 'PJOK';
+  if(/^(ipas|ilmu pengetahuan alam dan sosial)$/.test(normalized)) return 'IPAS';
+  if(/^(ppkn|pendidikan pancasila dan kewarganegaraan)$/.test(normalized)) return 'Pendidikan Pancasila';
+  return canonicalAssessmentSubject(stripped) || stripped;
+}
+// Urutan baku dan nama tampilan mapel pada rapor. Nama internal lama
+// (IPAS, PJOK, Agama dan Budi Pekerti) tetap dipertahankan agar data/TP lama kompatibel.
+const REPORT_SUBJECT_ORDER = [
+  'Agama dan Budi Pekerti','Pendidikan Pancasila','Bahasa Indonesia','Matematika',
+  'IPAS','PJOK','Bahasa Inggris','Seni Rupa','Seni Musik','Seni Tari','Seni Teater','Bahasa Daerah'
+];
+function reportSubjectLabel(subject){
+  const canonical=reportCanonicalSubject(subject);
+  const labels={
+    'Agama dan Budi Pekerti':'Pendidikan Agama Islam dan Budi Pekerti',
+    'IPAS':'Ilmu Pengetahuan Alam dan Sosial',
+    'PJOK':'Pendidikan Jasmani Olahraga dan Kesehatan'
+  };
+  return labels[canonical] || canonical || String(subject||'');
+}
+function reportSortSubjects(subjects){
+  const unique=[...new Set((subjects||[]).map(x=>reportCanonicalSubject(x)).filter(Boolean))];
+  return unique.sort((a,b)=>{
+    const ai=REPORT_SUBJECT_ORDER.indexOf(a), bi=REPORT_SUBJECT_ORDER.indexOf(b);
+    if(ai<0 && bi<0) return a.localeCompare(b,'id');
+    if(ai<0) return 1;
+    if(bi<0) return -1;
+    return ai-bi;
+  });
+}
+
+function reportKey(year,semester,cls,studentId,subject){
+  return [year,semester,cls,studentId,reportCanonicalSubject(subject)].map(x=>encodeURIComponent(String(x||''))).join('__');
+}
+function reportNoteKey(year,semester,cls,studentId){
+  return [year,semester,cls,studentId].map(x=>encodeURIComponent(String(x||''))).join('__');
+}
+function reportGetSaved(year,semester,cls,studentId,subject){
+  const id=reportKey(year,semester,cls,studentId,subject);
+  const records=window.AppState.reportDescriptions||[];
+  const direct=records.find(x=>x.id===id);
+  if(direct) return direct;
+  // Kompatibilitas dengan deskripsi lama yang tersimpan memakai nama mapel mentah,
+  // misalnya "Guru Agama dan Budi Pekerti" sebelum nama mapel diseragamkan.
+  return records.find(x=>String(x.academicYear||'')===String(year||'') &&
+    String(x.semester||'')===String(semester||'') &&
+    reportNorm(x.className||'')===reportNorm(cls) &&
+    String(x.studentId||'')===String(studentId||'') &&
+    reportCanonicalSubject(x.subject)===reportCanonicalSubject(subject))||null;
+}
+function reportClasses(year){
+  const vals=[];
+  const add=v=>{v=String(v||'').trim();if(v&&!vals.some(x=>reportNorm(x)===reportNorm(v))) vals.push(v);};
+  (window.AppState.classes||[]).filter(c=>!c.academicYear||c.academicYear===year).forEach(c=>add(c.name||c.className||c.kelas));
+  (window.AppState.students||[]).filter(s=>!reportStudentYear(s)||reportStudentYear(s)===year).forEach(s=>add(reportStudentClass(s)));
+  if(window.AppState.role==='teacher' && window.AppState.assignedClass) return [window.AppState.assignedClass];
+  return vals.sort((a,b)=>a.localeCompare(b,'id',{numeric:true}));
+}
+function reportStudents(cls,year){
+  return (window.AppState.students||[]).filter(s=>
+    reportNorm(reportStudentClass(s))===reportNorm(cls) &&
+    (!reportStudentYear(s)||reportStudentYear(s)===year)
+  ).sort((a,b)=>reportStudentName(a).localeCompare(reportStudentName(b),'id'));
+}
+function reportScore(studentId,cls,subject,year,semester){
+  const all=window.AppState.assessments||[];
+  const docId=`${cls}_${subject}_${year}_${semester}`.replace(/\s+|\//g,'_');
+  // Utamakan ID dokumen yang sama, lalu cocokkan metadata untuk mengantisipasi
+  // perbedaan penulisan nama kelas pada data Penilaian Sumatif lama.
+  const doc=all.find(a=>a.id===docId) || all.find(a=>
+    reportNorm(a.className||a.class||'')===reportNorm(cls) &&
+    reportNorm(a.subject||a.mataPelajaran||'')===reportNorm(subject) &&
+    String(a.academicYear||a.tahunAjaran||'').trim()===String(year||'').trim() &&
+    reportNorm(a.semester||'')===reportNorm(semester)
+  );
+  const rec=doc?.records?.[studentId];
+  if(!rec) return null;
+  // Baca nilai tersimpan jika tersedia. Untuk dokumen lama, hitung langsung
+  // dari nilai SLM dan SAS agar tidak perlu menyimpan ulang penilaian.
+  const saved=rec.nilaiAkhir??rec.finalScore??rec.finalGrade;
+  if(saved!==undefined&&saved!==null&&saved!=='') return saved;
+  const slm=Object.values(rec.slm||{}).map(v=>parseFloat(v)).filter(v=>Number.isFinite(v));
+  const sas=parseFloat(rec.sas);
+  if(Number.isFinite(sas)) slm.push(sas);
+  return slm.length ? Math.round(slm.reduce((a,b)=>a+b,0)/slm.length) : null;
+}
+function getReportViewHTML(){
+  const u=window.ReportUI, role=window.AppState.role;
+  const classes=reportClasses(u.year);
+  if(!u.className || !classes.some(c=>reportNorm(c)===reportNorm(u.className))) u.className=classes[0]||'';
+  const classNo=String((u.className.match(/\d+/)||[])[0]||'');
+  let subjects=[...new Set([...Object.keys(window.REPORT_TP_MASTER||{}).filter(s=>(window.REPORT_TP_MASTER[s]||{})[classNo]),...(window.AppState.reportTPCustom||[]).filter(x=>String(x.classNumber)===classNo).map(x=>x.subject)])];
+  // Daftar mapel penugasan guru menjadi sumber utama. Jangan hanya mengambil
+  // mapel dari master TP kelas, sebab itu dapat menghilangkan mapel yang diampu.
+  if(role==='subject_teacher'){
+    const assigned=getLoggedInTeacherSubjects();
+    subjects=[...new Set([...subjects.filter(sub=>reportCanEditSubject(sub)),...assigned])];
+  }
+  subjects=reportSortSubjects(subjects);
+  if(!subjects.some(sub=>reportCanonicalSubject(sub)===reportCanonicalSubject(u.subject))) u.subject=subjects[0]||'';
+  else u.subject=reportCanonicalSubject(u.subject);
+  const students=reportStudents(u.className,u.year);
+  if(!students.some(s=>String(s.id)===String(u.studentId))) u.studentId=students[0]?.id||'';
+  const selected=students.find(s=>String(s.id)===String(u.studentId));
+  const saved=selected?reportGetSaved(u.year,u.semester,u.className,selected.id,u.subject):null;
+  const classOptions=classes.map(c=>`<option value="${reportEsc(c)}" ${reportNorm(c)===reportNorm(u.className)?'selected':''}>${reportEsc(c)}</option>`).join('');
+  const subjectOptions=subjects.map(s=>`<option value="${reportEsc(s)}" ${reportCanonicalSubject(s)===reportCanonicalSubject(u.subject)?'selected':''}>${reportEsc(reportSubjectLabel(s))}</option>`).join('');
+  const studentOptions=students.map(s=>`<option value="${reportEsc(s.id)}" ${String(s.id)===String(u.studentId)?'selected':''}>${reportEsc(reportStudentName(s))}</option>`).join('');
+  // Pencocokan TP dibuat toleran terhadap variasi nama mapel dan format kelas
+  // (mis. "Kelas 5A", "5A", "Kelas 5", serta nama mapel PAI/PJOK).
+  const reportClassNumber = value => {
+    const m = String(value || '').match(/[1-6]/);
+    return m ? m[0] : '';
+  };
+  const reportSubjectAliases = value => {
+    const raw = normalizeAssessmentSubject(value);
+    // Pada data penugasan, nama mapel kadang disimpan dengan awalan jabatan,
+    // misalnya "Guru Agama Islam dan Budi Pekerti". Hilangkan awalan itu
+    // sebelum mencocokkan dengan nama mapel pada master TP.
+    const withoutTeacherPrefix = raw.replace(/^guru\s+/, '').trim();
+    const canonical = normalizeAssessmentSubject(canonicalAssessmentSubject(withoutTeacherPrefix));
+    const aliases = new Set([raw, withoutTeacherPrefix, canonical]);
+    if (/^(pai|pendidikan agama islam|pendidikan agama islam dan budi pekerti|pendidikan agama dan budi pekerti|agama islam dan budi pekerti|agama dan budi pekerti)$/.test(withoutTeacherPrefix) ||
+        (withoutTeacherPrefix.includes('agama islam') && withoutTeacherPrefix.includes('budi pekerti'))) {
+      aliases.add(normalizeAssessmentSubject('Agama dan Budi Pekerti'));
+      aliases.add(normalizeAssessmentSubject('Pendidikan Agama Islam dan Budi Pekerti'));
+    }
+    if (/\bpjok\b/.test(withoutTeacherPrefix) || withoutTeacherPrefix.startsWith('pendidikan jasmani')) {
+      aliases.add(normalizeAssessmentSubject('PJOK'));
+    }
+    if (/^(ppkn|pendidikan pancasila dan kewarganegaraan)$/.test(withoutTeacherPrefix)) {
+      aliases.add(normalizeAssessmentSubject('Pendidikan Pancasila'));
+    }
+    return aliases;
+  };
+  const classNoForTP = reportClassNumber(u.className);
+  const wantedSubjectKeys = reportSubjectAliases(u.subject);
+  const masterSubjectKey = Object.keys(window.REPORT_TP_MASTER || {}).find(k =>
+    [...wantedSubjectKeys].some(w => reportSubjectAliases(k).has(w))
+  );
+  const masterByClass = masterSubjectKey ? (window.REPORT_TP_MASTER[masterSubjectKey] || {}) : {};
+  const masterClassKey = Object.keys(masterByClass).find(k => {
+    const keyNumber = reportClassNumber(k);
+    return keyNumber ? keyNumber === classNoForTP : reportNorm(k) === reportNorm(u.className);
+  });
+  const masterTP = masterClassKey ? (Array.isArray(masterByClass[masterClassKey]) ? masterByClass[masterClassKey] : []) : [];
+  const customTP = (window.AppState.reportTPCustom || []).filter(x => {
+    const customSubjectKeys = reportSubjectAliases(x.subject);
+    const customClassNo = reportClassNumber(x.classNumber || x.className || '');
+    return [...wantedSubjectKeys].some(w => customSubjectKeys.has(w)) &&
+      customClassNo === classNoForTP;
+  }).map(x => x.text).filter(Boolean);
+  const tp = [...new Set([...masterTP, ...customTP].map(x => String(x || '').trim()).filter(Boolean))];
+  const selectedTP=saved?.selectedTP||[];
+  const canEdit=reportIsEditable()&&reportCanEditClass(u.className)&&reportCanEditSubject(u.subject);
+  const supportKey=reportNoteKey(u.year,u.semester,u.className,selected?.id);
+  const classNote=(window.AppState.reportClassNotes||[]).find(n=>n.id===supportKey)?.note||'';
+  const supportData=(window.AppState.reportStudentActivities||[]).find(n=>n.id===supportKey)||{};
+  const roster=students.map((s,i)=>{
+    const d=reportGetSaved(u.year,u.semester,u.className,s.id,u.subject);
+    const score=reportScore(s.id,u.className,u.subject,u.year,u.semester);
+    return `<tr class="border-t"><td class="p-2">${i+1}</td><td class="p-2 font-semibold">${reportEsc(reportStudentName(s))}</td><td class="p-2 text-center">${score===null?'<span class="text-slate-400">Belum tersedia</span>':reportEsc(score)}</td><td class="p-2 text-center">${(d?.selectedTP||[]).length} TP</td><td class="p-2">${d?.description?'<span class="text-emerald-700 font-semibold">Sudah diisi</span>':'<span class="text-amber-700">Belum diisi</span>'}</td><td class="p-2 text-center"><button type="button" onclick="window.selectReportStudent('${reportEsc(s.id)}')" class="px-3 py-1.5 rounded-lg ${canEdit?'bg-blue-600 text-white':'bg-slate-100 text-slate-700'} text-xs font-bold">${d?.description?'Lihat / Edit':'Isi Deskripsi'}</button></td><td class="p-2 text-center">${d?.description?`<button type="button" onclick="window.deleteReportDescription('${reportEsc(s.id)}')" class="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold" ${canEdit?'':'disabled'}>Hapus</button>`:'<span class="text-slate-300">—</span>'}</td></tr>`;
+  }).join('');
+  return `<div class="space-y-4">
+    <div class="bg-white border rounded-2xl p-4 shadow-sm">
+      <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="text-xl font-black text-slate-800">Aplikasi Rapor SD</h2><p class="text-sm text-slate-500 mt-1">${role==='subject_teacher'?'Guru Mapel hanya mengisi deskripsi capaian kompetensi pada mata pelajaran yang diampu. Nilai dan deskripsi tersinkron otomatis ke dasbor Wali Kelas.':role==='teacher'?'Dasbor Wali Kelas: rekap nilai dan deskripsi dari seluruh Guru Mapel, data pendukung, serta pencetakan rapor.':'Pemantauan data nilai dan deskripsi rapor.'}</p></div>${role==='teacher'?'<div class="flex flex-wrap gap-2"><button onclick="window.previewReportClass()" class="px-3 py-2 rounded-lg border text-xs font-bold">Pratinjau / Cetak Kelas</button><button onclick="window.previewReportOne()" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold">Pratinjau / Cetak Murid</button><button onclick="window.exportReportWordClass()" class="px-3 py-2 rounded-lg bg-blue-700 text-white text-xs font-bold">Cetak Word Kelas</button><button onclick="window.exportReportWordOne()" class="px-3 py-2 rounded-lg bg-indigo-700 text-white text-xs font-bold">Cetak Word Murid</button></div>':''}</div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
+       <div><label class="block text-xs font-bold mb-1">Tahun Ajaran</label><input id="reportYear" value="${reportEsc(u.year)}" class="w-full border rounded-lg p-2 text-sm" placeholder="2026/2027"></div>
+       <div><label class="block text-xs font-bold mb-1">Semester</label><select id="reportSemester" class="w-full border rounded-lg p-2 text-sm"><option ${u.semester==='Ganjil'?'selected':''}>Ganjil</option><option ${u.semester==='Genap'?'selected':''}>Genap</option></select></div>
+       <div><label class="block text-xs font-bold mb-1">Kelas</label><select id="reportClass" class="w-full border rounded-lg p-2 text-sm" ${role==='teacher'?'disabled':''}>${classOptions}</select></div>
+       <div><label class="block text-xs font-bold mb-1">Mata Pelajaran</label><select id="reportSubject" class="w-full border rounded-lg p-2 text-sm" ${role==='subject_teacher'?'':' '}>${subjectOptions||'<option value="">Tidak ada mata pelajaran yang ditugaskan</option>'}</select></div>
+       ${role==='teacher'?`<div><label class="block text-xs font-bold mb-1">Tanggal Cetak Rapor</label><input id="reportPrintDateApp" type="date" value="${reportEsc(u.printDate||new Date().toISOString().slice(0,10))}" onchange="window.ReportUI.printDate=this.value" class="w-full border rounded-lg p-2 text-sm"><p class="text-[11px] text-slate-500 mt-1">Tanggal ini akan tercetak pada rapor.</p></div>`:''}
+      </div>
+      ${role==='principal'?'<p class="text-xs text-amber-700 mt-3">Mode Kepala Sekolah: hanya pemantauan. Pencetakan rapor dilakukan oleh Wali Kelas.</p>':''}
+      ${role==='subject_teacher'?'<p class="text-xs text-purple-700 mt-2">Akses Guru Mapel dibatasi pada mata pelajaran yang tercantum dalam penugasan guru. Tombol cetak dan pengisian data pendukung rapor hanya tersedia bagi Wali Kelas.</p>':''}
+    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-4">
+      <div class="xl:col-span-2 bg-white border rounded-2xl p-4 shadow-sm">
+       <h3 class="font-extrabold text-slate-800 mb-3">Pengisian Deskripsi</h3>
+       <label class="block text-xs font-bold mb-1">Nama Murid</label><select id="reportStudent" class="w-full border rounded-lg p-2 text-sm mb-3">${studentOptions}</select>
+       <div class="text-xs text-slate-500 mb-2">Beri ceklis pada status setiap Tujuan Pembelajaran. Deskripsi capaian akan terbentuk otomatis dengan kalimat positif dan tetap dapat disunting.</div>${reportCanonicalSubject(u.subject)==='Bahasa Daerah'?`<div class="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg p-2 mb-2">TP Bahasa Daerah mengikuti fase: kelas I–II Fase A, kelas III–IV Fase B, dan kelas V–VI Fase C. Wali Kelas mengelola penilaian dan deskripsinya.</div>`:''}
+       ${role==='admin'?`<details class="mb-3 border rounded-lg p-3"><summary class="cursor-pointer text-xs font-bold text-blue-700">Administrator: Tambah TP / Mata Pelajaran</summary><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3"><input id="customTPSubject" class="border rounded-lg p-2 text-xs" placeholder="Nama mata pelajaran (mis. Pendidikan Agama)"><input id="customTPText" class="border rounded-lg p-2 text-xs" placeholder="Redaksi Tujuan Pembelajaran"></div><button type="button" onclick="window.addCustomReportTP()" class="mt-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold">Simpan TP Tambahan untuk Kelas ${reportEsc(classNo)}</button><p class="text-[10px] text-slate-500 mt-1">TP tambahan disimpan terpisah dari TP sumber dan dapat dipilih sesuai kelas.</p></details>`:''}
+       <div class="max-h-96 overflow-y-auto border rounded-xl p-3 space-y-3" id="reportTPList">${tp.length?tp.map((t,i)=>{const achieved=(saved?.achievedTP||(!saved?.achievedTP&&!saved?.notYetTP?selectedTP:[])).includes(t);const developing=(saved?.notYetTP||[]).includes(t);return `<div class="rounded-lg border p-3"><p class="text-sm font-medium mb-2">${i+1}. ${reportEsc(t)}</p><div class="flex flex-wrap gap-x-5 gap-y-2 text-xs"><label class="flex items-center gap-2 text-emerald-700 font-semibold"><input type="checkbox" class="report-tp-achieved" data-tp="${reportEsc(t)}" ${achieved?'checked':''} ${canEdit?'':'disabled'} onchange="window.updateReportTPStatus(this)"> Tercapai</label><label class="flex items-center gap-2 text-amber-700 font-semibold"><input type="checkbox" class="report-tp-developing" data-tp="${reportEsc(t)}" ${developing?'checked':''} ${canEdit?'':'disabled'} onchange="window.updateReportTPStatus(this)"> Belum tercapai / perlu penguatan</label></div></div>`;}).join(''):'<p class="text-sm text-amber-700">TP belum ditemukan untuk mata pelajaran '+reportEsc(u.subject||'-')+' kelas '+reportEsc(u.className||'-')+'. Periksa penugasan mata pelajaran dan data TP master, atau minta administrator menambahkan TP.</p>'}</div>       <div class="mt-3"><label class="block text-xs font-bold mb-1">Deskripsi Capaian Kompetensi (otomatis, dapat diedit)</label><textarea id="reportDescription" rows="7" class="w-full border rounded-lg p-3 text-sm" ${canEdit?'':'readonly'} placeholder="Ceklis status TP untuk membentuk deskripsi capaian secara otomatis.">${reportEsc(saved?.description||'')}</textarea><p class="text-[10px] text-slate-500 mt-1">TP tercapai dan TP yang masih perlu penguatan akan dijelaskan secara terpisah dengan bahasa yang positif.</p></div>
+       ${['admin','teacher'].includes(role)?`<div class="mt-4 border-t pt-3 space-y-3">
+        <h4 class="font-extrabold text-sm">Data Pendukung Rapor</h4>
+        <div><label class="block text-xs font-bold mb-1">Kokurikuler – Kegiatan dan Capaian</label><textarea id="reportKokurikuler" rows="3" class="w-full border rounded-lg p-3 text-sm" ${reportCanEditClass(u.className)?'':'readonly'} placeholder="Tuliskan kegiatan kokurikuler dan capaian murid...">${reportEsc(supportData.kokurikulerDescription||'')}</textarea></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+         <div class="border rounded-lg p-3 space-y-2"><b class="text-xs">Ekstrakurikuler 1</b><input id="reportExtra1" class="w-full border rounded-lg p-2 text-sm" placeholder="Nama kegiatan" value="${reportEsc(supportData.ekstrakurikuler1||'')}" ${reportCanEditClass(u.className)?'':'readonly'}><textarea id="reportExtra1Desc" rows="3" class="w-full border rounded-lg p-2 text-sm" placeholder="Keterangan / capaian" ${reportCanEditClass(u.className)?'':'readonly'}>${reportEsc(supportData.ekstrakurikuler1Description||'')}</textarea></div>
+         <div class="border rounded-lg p-3 space-y-2"><b class="text-xs">Ekstrakurikuler 2</b><input id="reportExtra2" class="w-full border rounded-lg p-2 text-sm" placeholder="Nama kegiatan" value="${reportEsc(supportData.ekstrakurikuler2||'')}" ${reportCanEditClass(u.className)?'':'readonly'}><textarea id="reportExtra2Desc" rows="3" class="w-full border rounded-lg p-2 text-sm" placeholder="Keterangan / capaian" ${reportCanEditClass(u.className)?'':'readonly'}>${reportEsc(supportData.ekstrakurikuler2Description||'')}</textarea></div>
+         <div class="border rounded-lg p-3 space-y-2"><b class="text-xs">Ekstrakurikuler 3</b><input id="reportExtra3" class="w-full border rounded-lg p-2 text-sm" placeholder="Nama kegiatan" value="${reportEsc(supportData.ekstrakurikuler3||'')}" ${reportCanEditClass(u.className)?'':'readonly'}><textarea id="reportExtra3Desc" rows="3" class="w-full border rounded-lg p-2 text-sm" placeholder="Keterangan / capaian" ${reportCanEditClass(u.className)?'':'readonly'}>${reportEsc(supportData.ekstrakurikuler3Description||'')}</textarea></div>
+        </div>
+        <div><label class="block text-xs font-bold mb-1">Catatan Wali Kelas</label><textarea id="reportClassNote" rows="3" class="w-full border rounded-lg p-3 text-sm" ${reportCanEditClass(u.className)?'':'readonly'}>${reportEsc(classNote)}</textarea></div>
+        <button type="button" onclick="window.saveReportSupportingData()" class="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold" ${reportCanEditClass(u.className)?'':'disabled'}>Simpan Kokurikuler, Ekstrakurikuler & Catatan</button>
+       </div>`:''}
+       <div class="flex flex-wrap gap-2 mt-3">
+        <button type="button" onclick="window.draftReportDescription()" class="px-3 py-2 rounded-lg border text-xs font-bold" ${canEdit?'':'disabled'}>Susun Draf dari TP</button>
+        <button type="button" onclick="window.saveReportDescription()" class="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold" ${canEdit?'':'disabled'}>Simpan Deskripsi</button>
+        <button type="button" onclick="window.clearReportTP()" class="px-3 py-2 rounded-lg border text-xs font-bold" ${canEdit?'':'disabled'}>Hapus Pilihan TP</button>
+       </div>
+       <p class="text-[11px] text-slate-500 mt-2">Nilai akhir hanya informasi. Deskripsi dan TP disimpan terpisah dari data penilaian.</p>
+      </div>
+      <div class="xl:col-span-3 bg-white border rounded-2xl p-4 shadow-sm overflow-x-auto">
+       <div class="flex justify-between items-center gap-2 mb-3"><h3 class="font-extrabold">Rekap Deskripsi Rapor</h3><span class="text-xs text-slate-500">${students.length} murid</span></div>
+       <table class="w-full text-sm"><thead class="bg-slate-100 text-xs uppercase"><tr><th class="p-2 text-left">No</th><th class="p-2 text-left">Nama Murid</th><th class="p-2">Nilai Akhir</th><th class="p-2">Pilihan TP</th><th class="p-2 text-left">Deskripsi</th><th class="p-2">Aksi</th><th class="p-2">Hapus</th></tr></thead><tbody>${roster||'<tr><td colspan="7" class="p-5 text-center text-slate-400">Belum ada murid pada kelas ini.</td></tr>'}</tbody></table>
+      </div>
+    </div>
+  </div>`;
+}
+function bindReportEvents(){
+ const bind=(id,fn)=>document.getElementById(id)?.addEventListener('change',fn);
+ bind('reportYear',v=>{window.ReportUI.year=v.target.value.trim();window.AppState.activeYear=window.ReportUI.year;window.ReportUI.className='';renderCurrentView();});
+ bind('reportSemester',v=>{window.ReportUI.semester=v.target.value;window.AppState.activeSemester=v.target.value;renderCurrentView();});
+ bind('reportClass',v=>{window.ReportUI.className=v.target.value;window.ReportUI.studentId='';renderCurrentView();});
+ bind('reportSubject',v=>{window.ReportUI.subject=v.target.value;renderCurrentView();});
+ bind('reportStudent',v=>{window.ReportUI.studentId=v.target.value;renderCurrentView();});
+}
+window.selectReportStudent=function(id){window.ReportUI.studentId=id;renderCurrentView();};
+window.deleteReportDescription=async function(studentId){
+ const u=window.ReportUI;
+ if(!['admin','teacher','subject_teacher'].includes(window.AppState.role)||!reportCanEditClass(u.className)||!reportCanEditSubject(u.subject)) return showToast('Anda tidak memiliki kewenangan menghapus deskripsi ini.','error');
+ const saved=reportGetSaved(u.year,u.semester,u.className,studentId,u.subject);
+ if(!saved?.id||!saved?.description) return showToast('Deskripsi yang akan dihapus tidak ditemukan.','error');
+ const student=(window.AppState.students||[]).find(s=>String(s.id)===String(studentId));
+ const name=student?reportStudentName(student):'murid ini';
+ if(!confirm('Hapus deskripsi mata pelajaran '+reportSubjectLabel(u.subject)+' untuk '+name+'? Data deskripsi dan pilihan TP akan dihapus.')) return;
+ if(!auth?.currentUser||!firebaseAuthReady) return showToast('Firebase belum siap. Silakan coba kembali.','error');
+ showLoading('Menghapus deskripsi rapor...');
+ try{
+  await deleteDoc(getPublicDoc('reportDescriptions',saved.id));
+  window.AppState.reportDescriptions=(window.AppState.reportDescriptions||[]).filter(x=>x.id!==saved.id);
+  showToast('Deskripsi rapor berhasil dihapus.','success');
+  renderCurrentView();
+ }catch(e){showToast('Gagal menghapus deskripsi: '+e.message,'error');}
+ finally{hideLoading();}
+};
+window.reportBuildDescription=function(){
+ const achieved=[...document.querySelectorAll('.report-tp-achieved:checked')].map(x=>x.dataset.tp||'');
+ const developing=[...document.querySelectorAll('.report-tp-developing:checked')].map(x=>x.dataset.tp||'');
+ const sentence=(tp)=>{const v=String(tp||'').trim().replace(/[.。]+$/,'');return v?v.charAt(0).toLowerCase()+v.slice(1):'';};
+ const paragraphs=[];
+ if(achieved.length) paragraphs.push(achieved.map(tp=>'Ananda sudah mampu '+sentence(tp)+'.').join(' '));
+ if(developing.length) paragraphs.push(developing.map(tp=>'Ananda masih mengembangkan kemampuan untuk '+sentence(tp)+'. Ananda akan memperoleh penguatan melalui latihan bertahap dan pendampingan agar semakin berkembang.').join(' '));
+ return paragraphs.join('\n\n');
+};
+window.updateReportTPStatus=function(el){
+ const tp=el?.dataset?.tp;if(!tp)return;
+ const group=el.classList.contains('report-tp-achieved')?'.report-tp-developing':'.report-tp-achieved';
+ if(el.checked){document.querySelectorAll(group).forEach(x=>{if(x.dataset.tp===tp)x.checked=false;});}
+ const d=document.getElementById('reportDescription');if(d)d.value=window.reportBuildDescription();
+};
+window.draftReportDescription=function(){
+ const draft=window.reportBuildDescription();
+ if(!draft)return showToast('Beri ceklis status sekurang-kurangnya satu Tujuan Pembelajaran.','error');
+ const d=document.getElementById('reportDescription');if(d)d.value=draft;
+};
+window.clearReportTP=function(){
+ document.querySelectorAll('.report-tp-achieved,.report-tp-developing').forEach(x=>x.checked=false);
+ const d=document.getElementById('reportDescription');if(d)d.value='';
+};
+window.saveReportDescription=async function(){
+ const u=window.ReportUI, student=(window.AppState.students||[]).find(s=>String(s.id)===String(u.studentId));
+ if(!student) return showToast('Pilih murid terlebih dahulu.','error');
+ if(!['admin','teacher','subject_teacher'].includes(window.AppState.role)||!reportCanEditClass(u.className)||!reportCanEditSubject(u.subject)) return showToast('Anda tidak memiliki kewenangan mengubah deskripsi ini.','error');
+ const achievedTP=[...document.querySelectorAll('.report-tp-achieved:checked')].map(x=>x.dataset.tp||'');
+  const notYetTP=[...document.querySelectorAll('.report-tp-developing:checked')].map(x=>x.dataset.tp||'');
+  const selectedTP=[...new Set([...achievedTP,...notYetTP])];
+ const description=document.getElementById('reportDescription')?.value?.trim()||'';
+ if(!selectedTP.length) return showToast('Beri ceklis status sekurang-kurangnya satu TP.','error');
+ if(!description) return showToast('Deskripsi rapor belum diisi.','error');
+ if(!auth?.currentUser||!firebaseAuthReady) return showToast('Firebase belum siap. Silakan coba kembali.','error');
+ const id=reportKey(u.year,u.semester,u.className,student.id,u.subject);
+ const data={academicYear:u.year,semester:u.semester,className:u.className,studentId:student.id,studentName:reportStudentName(student),subject:reportCanonicalSubject(u.subject),subjectOriginal:u.subject,selectedTP,achievedTP,notYetTP,description,teacherId:window.AppState.currentTeacherId||auth.currentUser.uid,teacherName:window.AppState.currentTeacherName||window.AppState.userName||'',updatedAt:serverTimestamp()};
+ showLoading('Menyimpan deskripsi rapor...');
+ try{
+   await setDoc(getPublicDoc('reportDescriptions',id),data,{merge:true});
+   if(['admin','teacher'].includes(window.AppState.role) && reportCanEditClass(u.className)){
+     const noteId=reportNoteKey(u.year,u.semester,u.className,student.id);
+     const note=document.getElementById('reportClassNote')?.value||'';
+     await setDoc(getPublicDoc('reportClassNotes',noteId),{academicYear:u.year,semester:u.semester,className:u.className,studentId:student.id,note,teacherId:window.AppState.currentTeacherId||auth.currentUser.uid,updatedAt:serverTimestamp()},{merge:true});
+   }
+   showToast('Deskripsi rapor berhasil disimpan.','success');
+ }catch(e){showToast('Gagal menyimpan deskripsi: '+e.message,'error');}
+ finally{hideLoading();}
+};
+window.saveReportSupportingData=async function(){
+ const u=window.ReportUI, student=(window.AppState.students||[]).find(s=>String(s.id)===String(u.studentId));
+ if(!student) return showToast('Pilih murid terlebih dahulu.','error');
+ if(!reportCanEditClass(u.className)||!['admin','teacher'].includes(window.AppState.role)) return showToast('Hanya wali kelas atau administrator yang dapat mengisi data pendukung rapor.','error');
+ if(!auth?.currentUser||!firebaseAuthReady) return showToast('Firebase belum siap. Silakan coba kembali.','error');
+ const id=reportNoteKey(u.year,u.semester,u.className,student.id);
+ const data={academicYear:u.year,semester:u.semester,className:u.className,studentId:student.id,studentName:reportStudentName(student),kokurikulerDescription:document.getElementById('reportKokurikuler')?.value?.trim()||'',ekstrakurikuler1:document.getElementById('reportExtra1')?.value?.trim()||'',ekstrakurikuler1Description:document.getElementById('reportExtra1Desc')?.value?.trim()||'',ekstrakurikuler2:document.getElementById('reportExtra2')?.value?.trim()||'',ekstrakurikuler2Description:document.getElementById('reportExtra2Desc')?.value?.trim()||'',ekstrakurikuler3:document.getElementById('reportExtra3')?.value?.trim()||'',ekstrakurikuler3Description:document.getElementById('reportExtra3Desc')?.value?.trim()||'',updatedAt:serverTimestamp(),teacherId:window.AppState.currentTeacherId||auth.currentUser.uid};
+ const note=document.getElementById('reportClassNote')?.value?.trim()||'';
+ showLoading('Menyimpan data pendukung rapor...');
+ try{
+  await setDoc(getPublicDoc('reportStudentActivities',id),data,{merge:true});
+  await setDoc(getPublicDoc('reportClassNotes',id),{academicYear:u.year,semester:u.semester,className:u.className,studentId:student.id,studentName:reportStudentName(student),note,teacherId:window.AppState.currentTeacherId||auth.currentUser.uid,updatedAt:serverTimestamp()},{merge:true});
+  const local=(window.AppState.reportStudentActivities||[]).filter(x=>x.id!==id);local.push({id,...data});window.AppState.reportStudentActivities=local;
+  const notes=(window.AppState.reportClassNotes||[]).filter(x=>x.id!==id);notes.push({id,note,...data});window.AppState.reportClassNotes=notes;
+  showToast('Data kokurikuler, ekstrakurikuler, dan catatan wali kelas berhasil disimpan.','success');
+  // safeRender hanya tersedia di dalam initDataListeners; jangan panggil dari fungsi global.
+  // Perbarui tampilan rapor secara aman setelah penyimpanan berhasil.
+  if(window.AppState.currentView==='report-sd' && typeof renderCurrentView==='function'){ renderCurrentView(); }
+ }catch(e){showToast('Gagal menyimpan data pendukung rapor: '+e.message,'error');}
+ finally{hideLoading();}
+};
+
+window.addCustomReportTP=async function(){
+ if(window.AppState.role!=='admin') return showToast('Hanya administrator yang dapat menambah TP.','error');
+ const u=window.ReportUI, subject=document.getElementById('customTPSubject')?.value?.trim()||u.subject, text=document.getElementById('customTPText')?.value?.trim()||'';
+ const classNumber=String((u.className.match(/\\d+/)||[])[0]||'');
+ if(!subject||!text||!classNumber) return showToast('Nama mata pelajaran, kelas, dan redaksi TP wajib diisi.','error');
+ if(!auth?.currentUser||!firebaseAuthReady) return showToast('Firebase belum siap.','error');
+ const exists=(window.AppState.reportTPCustom||[]).some(x=>x.subject===subject&&String(x.classNumber)===classNumber&&x.text===text);
+ if(exists) return showToast('TP tersebut sudah tersedia.','info');
+ const id=[subject,classNumber,Date.now()].map(encodeURIComponent).join('__');
+ showLoading('Menyimpan TP tambahan...');
+ try{
+  await setDoc(getPublicDoc('reportTPCustom',id),{subject,classNumber,text,createdBy:auth.currentUser.uid,updatedAt:serverTimestamp()});
+  window.ReportUI.subject=subject;
+  showToast('TP tambahan berhasil disimpan.','success');
+ }catch(e){showToast('Gagal menyimpan TP: '+e.message,'error');}
+ finally{hideLoading();}
+};
+function reportPrintHTML(cls,student,selectedPrintDate){
+ const u=window.ReportUI, info=window.AppState.schoolInfo||{};
+ const printDate=selectedPrintDate||u.printDate||new Date().toISOString().slice(0,10);
+ const students=student?[student]:reportStudents(cls,u.year);
+ const esc=reportEsc;
+ const pages=students.map(s=>{
+  const savedSubjects=(window.AppState.reportDescriptions||[])
+   .filter(d=>String(d.academicYear||'')===String(u.year||'')
+    && String(d.semester||'')===String(u.semester||'')
+    && reportNorm(d.className||'')===reportNorm(cls)
+    && String(d.studentId||'')===String(s.id))
+   .map(d=>reportCanonicalSubject(d.subject)).filter(Boolean);
+  const customSubjects=(window.AppState.reportTPCustom||[])
+   .filter(d=>String(d.classNumber||'')===String((String(cls).match(/\d+/)||[])[0]||''))
+   .map(d=>d.subject).filter(Boolean);
+  const subjects=reportSortSubjects([...Object.keys(window.REPORT_TP_MASTER||{}),...customSubjects,...savedSubjects]);
+  const availableRows=subjects.map(sub=>{
+   const d=reportGetSaved(u.year,u.semester,cls,s.id,sub);
+   const score=reportScore(s.id,cls,sub,u.year,u.semester);
+   if(!d && score===null) return null;
+   return {sub,d,score};
+  }).filter(Boolean);
+  const rows=availableRows.map(({sub,d,score},i)=>{
+   const subjectCell=reportCanonicalSubject(sub)==='Bahasa Daerah'
+    ? '<div style="font-size:8pt;line-height:1.15;margin-bottom:2px">Muatan Lokal</div><div>Bahasa Daerah</div>'
+    : esc(reportSubjectLabel(sub));
+   return `<tr><td class="num">${i+1}</td><td class="subject-name">${subjectCell}</td><td class="score">${score===null?'-':esc(score)}</td><td class="competency">${esc(d?.description||'')}</td></tr>`;
+  }).join('');
+  const classNo=Number((String(cls).match(/\d+/)||[])[0]||0);
+  const phase=classNo>=1&&classNo<=2?'A':classNo>=3&&classNo<=4?'B':classNo>=5&&classNo<=6?'C':'-';
+  const classRec=(window.AppState.classes||[]).find(c=>reportNorm(c.name||c.className||'')===reportNorm(cls))||{};
+  const teacherName=classRec.teacherName||window.AppState.currentTeacherName||'';
+  const teacherRec=(window.AppState.teachers||[]).find(t=>String(t.name||'')===String(teacherName))||{};
+  // Sinkronkan rekap ketidakhadiran rapor langsung dengan koleksi Presensi Murid.
+  // Dokumen presensi disimpan per tanggal dan kelas; semester ditentukan dari metadata
+  // (atau dari tanggal jika metadata semester lama tidak tersedia).
+  const reportYearParts=String(u.year||'').split('/');
+  const reportYearStart=parseInt(reportYearParts[0],10)||new Date().getFullYear();
+  const reportYearEnd=parseInt(reportYearParts[1],10)||(reportYearStart+1);
+  const reportSemesterStart=u.semester==='Ganjil'?`${reportYearStart}-07-01`:`${reportYearEnd}-01-01`;
+  const reportSemesterEnd=u.semester==='Ganjil'?`${reportYearStart}-12-31`:`${reportYearEnd}-06-30`;
+  const sameReportClass=(a)=>reportNorm(a.className||'')===reportNorm(cls);
+  const attendRows=(window.AppState.attendance||[]).filter(a=>{
+    if(!sameReportClass(a)) return false;
+    const ay=String(a.academicYear||u.year);
+    if(ay!==String(u.year)) return false;
+    const date=String(a.date||'');
+    const sem=a.semester?String(a.semester):'';
+    if(sem) return sem.toLowerCase()===String(u.semester).toLowerCase();
+    return date>=reportSemesterStart&&date<=reportSemesterEnd;
+  });
+  const attend={H:0,S:0,I:0,A:0};
+  attendRows.forEach(a=>{
+    const records=a.records||a.attendance||a.data||{};
+    const raw=records?.[s.id];
+    const value=String(raw&&typeof raw==='object'?(raw.status||raw.kehadiran||raw.value||''):raw||'').trim().toUpperCase();
+    const statusMap={'H':'H','HADIR':'H','S':'S','SAKIT':'S','I':'I','IZIN':'I','A':'A','ALPA':'A','ALPHA':'A'};
+    const status=statusMap[value];
+    if(status&&status!=='H') attend[status]++;
+  });
+  const supportId=reportNoteKey(u.year,u.semester,cls,s.id);
+  const support=(window.AppState.reportStudentActivities||[]).find(n=>n.id===supportId)||{};
+  const note=(window.AppState.reportClassNotes||[]).find(n=>n.id===supportId)?.note||'';
+  const location=info.regency||info.district||info.city||'';
+  const address=info.address||'';
+  const school=info.name||'';
+  return `<div class="report-sheet">
+   <h1 class="report-title">LAPORAN HASIL BELAJAR MURID</h1>
+   <div class="identity-grid">
+    <div><b>Nama Murid</b><span>:</span>${esc(reportStudentName(s))}</div><div><b>Kelas</b><span>:</span>${esc(cls)}</div>
+    <div><b>NISN</b><span>:</span>${esc(s.nisn||s.nis||'-')}</div><div><b>Fase</b><span>:</span>${phase}</div>
+    <div><b>Sekolah</b><span>:</span>${esc(school)}</div><div><b>Semester</b><span>:</span>${esc(u.semester)}</div>
+    <div><b>Alamat</b><span>:</span>${esc(s.address||s.alamat||address)}</div><div><b>Tahun Ajaran</b><span>:</span>${esc(u.year)}</div>
+   </div>
+   <table class="subject-table"><colgroup><col style="width:7%"><col style="width:34%"><col style="width:9%"><col style="width:50%"></colgroup>
+    <thead><tr><th>No.</th><th>Mata Pelajaran</th><th>Nilai<br>Akhir</th><th>Capaian Kompetensi</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="4" class="empty">Belum ada nilai atau deskripsi rapor untuk murid ini.</td></tr>'}</tbody>
+   </table>
+   <table class="section-table cocurricular"><thead><tr><th>Kokurikuler</th></tr></thead><tbody><tr><td class="writing-area">${esc(support.kokurikulerDescription||'')}</td></tr></tbody></table>
+  </div>
+  <div class="report-sheet second-sheet">
+   <table class="section-table extracurricular-table"><colgroup><col style="width:7%"><col style="width:30%"><col style="width:63%"></colgroup><thead><tr><th>No.</th><th>Ekstrakurikuler</th><th>Keterangan</th></tr></thead><tbody>
+    <tr><td>1</td><td>${esc(support.ekstrakurikuler1||'')}</td><td>${esc(support.ekstrakurikuler1Description||'')}</td></tr>
+    <tr><td>2</td><td>${esc(support.ekstrakurikuler2||'')}</td><td>${esc(support.ekstrakurikuler2Description||'')}</td></tr>
+    <tr><td>3</td><td>${esc(support.ekstrakurikuler3||'')}</td><td>${esc(support.ekstrakurikuler3Description||'')}</td></tr>
+   </tbody></table>
+   <div class="lower-grid">
+    <table class="section-table attendance-table"><thead><tr><th colspan="2">Ketidakhadiran</th></tr></thead><tbody>
+     <tr><td>Sakit</td><td>${attend.S} hari</td></tr><tr><td>Izin</td><td>${attend.I} hari</td></tr><tr><td>Tanpa Keterangan</td><td>${attend.A} hari</td></tr>
+    </tbody></table>
+    <table class="section-table homeroom-table"><thead><tr><th>Catatan Wali Kelas</th></tr></thead><tbody><tr><td class="note-area">${esc(note)}</td></tr></tbody></table>
+   </div>
+   <table class="section-table parent-response"><thead><tr><th>Tanggapan Orang Tua/Wali Murid</th></tr></thead><tbody><tr><td class="response-area">${esc(s.parentResponse||'')}</td></tr></tbody></table>
+   <div class="signature-grid">
+    <div>Orang Tua Murid<br><br><br></div>
+    <div>Kepala Sekolah<br><br><br><strong>${esc(info.principal||'')}</strong>${info.principalNip?`<br>NIP. ${esc(info.principalNip)}`:''}</div>
+    <div><span class="report-date-value" data-location="${esc(location)}">${esc(location)}${location?', ':''}${new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric'}).format(new Date(printDate+'T00:00:00'))}</span><br>Wali Kelas<br><br><br><strong>${esc(teacherName)}</strong>${teacherRec.nip?`<br>NIP. ${esc(teacherRec.nip)}`:''}</div>
+   </div>
+  </div>`;
+ }).join('');
+ return `<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Rapor Peserta Didik</title><style id="reportPrintStyle">
+ @page{size:A4;margin:10mm}*{box-sizing:border-box}body{font:9pt Arial,sans-serif;color:#222;margin:0}.report-title{text-align:center;font-size:14pt;line-height:1.2;font-weight:700;letter-spacing:.35px;margin:0 0 12px;padding:0}.report-toolbar{position:sticky;top:0;z-index:5;background:#f1f5f9;padding:9px;display:flex;gap:10px;align-items:center;font:12px Arial;border-bottom:1px solid #cbd5e1}.report-toolbar select,.report-toolbar button{padding:7px 10px;border:1px solid #94a3b8;border-radius:6px;background:white}.report-sheet{width:100%;min-height:0;height:auto;page-break-after:always;break-after:page;padding:0;overflow:visible;box-sizing:border-box}.report-sheet:not(:last-child){margin-bottom:12mm}.report-sheet:last-child{page-break-after:auto;break-after:auto}.identity-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:28px;row-gap:5px;margin:0 0 10px}.identity-grid>div{display:grid;grid-template-columns:90px 8px 1fr;gap:3px;min-height:13px;font-size:8.5pt}.identity-grid b{font-weight:700}.subject-table,.section-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 9px}.subject-table th,.subject-table td,.section-table th,.section-table td{border:1px solid #888;padding:4px 5px;vertical-align:top;overflow-wrap:anywhere}.subject-table th,.section-table th{background:#c9cacc;text-align:center;font-weight:700}.subject-table td{font-size:8pt}.subject-table .num,.subject-table .score{text-align:center}.subject-table td.num,.subject-table td.subject-name,.subject-table td.score{vertical-align:middle}.subject-table .competency{white-space:pre-line;line-height:1.22}.subject-table .empty{text-align:center;padding:12px}.section-table td{font-size:8pt}.cocurricular th{font-size:8.5pt}.writing-area{height:30mm;white-space:pre-line}.section-table tbody td:empty{min-height:8mm}.second-sheet{padding-top:0}.report-date{text-align:right;font-size:8.5pt;margin:0 0 5px}.lower-grid{display:grid;grid-template-columns:44% 54%;gap:2%;align-items:stretch;margin:8px 0 12px}.attendance-table td:last-child{text-align:center;width:34%}.homeroom-table .note-area{height:35mm;white-space:pre-line}.parent-response{margin-top:10px}.parent-response .response-area{height:43mm;white-space:pre-line}.signature-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:15mm;text-align:center;font-size:8.5pt;line-height:1.35}.signature-grid>div{min-height:42mm}.signature-grid strong{font-size:8pt}.signature-grid b{font-size:8pt}@media print{
+  html,body{margin:0!important;padding:0!important;width:100%;background:#fff!important}
+  .report-toolbar{display:none!important}
+  /* Jangan memaksa halaman baru setelah lembar pertama: tabel mapel yang panjang
+     dapat mengalir ke halaman berikutnya. Pemaksaan di sini menyebabkan halaman 3 kosong/terpisah. */
+  .report-sheet{height:auto!important;min-height:0!important;overflow:visible!important;page-break-after:auto!important;break-after:auto!important;page-break-inside:auto;break-inside:auto;margin:0!important}
+  .report-sheet.second-sheet:not(:last-child){page-break-after:always!important;break-after:page!important}
+  .report-sheet:last-child{page-break-after:auto!important;break-after:auto!important}
+  /* Bagian penutup dibuat lebih ringkas agar menyatu pada halaman lanjutan tabel mapel. */
+  .homeroom-table .note-area{height:24mm!important}
+  .parent-response{margin-top:5px!important}
+  .parent-response .response-area{height:25mm!important}
+  .signature-grid{margin-top:5mm!important}
+  .signature-grid>div{min-height:27mm!important}
+  .lower-grid{margin:5px 0 7px!important}
+  table{page-break-inside:auto;break-inside:auto}
+  thead{display:table-header-group}
+  tfoot{display:table-footer-group}
+  tr{page-break-inside:avoid;break-inside:avoid}
+  .identity-grid,.lower-grid,.signature-grid,.parent-response,.cocurricular,.extracurricular-table{page-break-inside:avoid;break-inside:avoid}
+  .signature-grid{margin-top:10mm}
+  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+ </style></head><body><div class="report-toolbar"><label>Ukuran kertas: <select id="reportPaper" onchange="document.getElementById('reportPrintStyle').textContent=document.getElementById('reportPrintStyle').textContent.replace(/@page\{size:[^;]+;/,'@page{size:'+(this.value==='F4'?'210mm 330mm':'A4')+';')"><option value="A4">A4</option><option value="F4">F4 (Folio)</option></select></label><label>Tanggal Cetak Rapor: <input id="reportPrintDate" type="date" value="${printDate}" onchange="document.querySelectorAll('.report-date-value').forEach(el=>{const d=this.value?new Date(this.value+'T00:00:00'):null;const prefix=el.dataset.location||'';el.textContent=prefix+(prefix?', ':'')+(d?new Intl.DateTimeFormat('id-ID',{day:'numeric',month:'long',year:'numeric'}).format(d):'-')})"></label><button onclick="window.print()">Cetak / Simpan PDF</button></div>${pages}</body></html>`;
+}
+window.previewReportOne=function(){
+ if(window.AppState.role!=='teacher') return showToast('Pencetakan rapor hanya dapat dilakukan oleh Wali Kelas.','error');
+ const u=window.ReportUI, s=(window.AppState.students||[]).find(x=>String(x.id)===String(u.studentId));
+ if(!s)return showToast('Pilih murid terlebih dahulu.','error');
+ const w=window.open('','_blank');if(!w)return showToast('Izinkan pop-up browser untuk pratinjau rapor.','error');
+ w.document.open();w.document.write(reportPrintHTML(u.className,s,document.getElementById('reportPrintDateApp')?.value||u.printDate));w.document.close();
+};
+window.previewReportClass=function(){
+ if(window.AppState.role!=='teacher') return showToast('Pencetakan rapor hanya dapat dilakukan oleh Wali Kelas.','error');
+ const u=window.ReportUI;if(!u.className)return showToast('Pilih kelas terlebih dahulu.','error');
+ const w=window.open('','_blank');if(!w)return showToast('Izinkan pop-up browser untuk pratinjau rapor.','error');
+ w.document.open();w.document.write(reportPrintHTML(u.className,null,document.getElementById('reportPrintDateApp')?.value||u.printDate));w.document.close();
+};
+
+// Ekspor Word dengan struktur tabel agar tata letak stabil di Microsoft Word.
+// Isi dan gaya dasar diambil dari template cetak PDF yang sama.
+window.exportReportWord=function(singleStudent){
+ if(window.AppState.role!=='teacher') return showToast('Fitur cetak Word hanya dapat digunakan oleh Wali Kelas.','error');
+ const u=window.ReportUI||{};
+ if(!u.className) return showToast('Pilih kelas terlebih dahulu.','error');
+ let student=null;
+ if(singleStudent){
+  student=(window.AppState.students||[]).find(x=>String(x.id)===String(u.studentId));
+  if(!student) return showToast('Pilih murid terlebih dahulu.','error');
+ }
+ const date=document.getElementById('reportPrintDateApp')?.value||u.printDate||new Date().toISOString().slice(0,10);
+ const raw=reportPrintHTML(u.className,student,date);
+ const parser=new DOMParser();
+ const parsed=parser.parseFromString(raw,'text/html');
+ parsed.querySelector('.report-toolbar')?.remove();
+ // CSS Grid tidak konsisten pada format .doc lama. Ubah bagian grid menjadi tabel Word.
+ parsed.querySelectorAll('.identity-grid').forEach(grid=>{
+  const items=Array.from(grid.children); const table=parsed.createElement('table');
+  table.className='word-identity'; table.setAttribute('cellpadding','0'); table.setAttribute('cellspacing','0');
+  for(let i=0;i<items.length;i+=2){
+   const tr=table.insertRow();
+   [items[i],items[i+1]].forEach(item=>{const td=tr.insertCell();td.innerHTML=item?item.innerHTML:'&nbsp;';});
+  }
+  grid.replaceWith(table);
+ });
+ parsed.querySelectorAll('.lower-grid').forEach(grid=>{
+  const items=Array.from(grid.children); const table=parsed.createElement('table');
+  table.className='word-lower'; const tr=table.insertRow();
+  items.forEach(item=>{const td=tr.insertCell();td.innerHTML=item.outerHTML;});
+  grid.replaceWith(table);
+ });
+ parsed.querySelectorAll('.signature-grid').forEach(grid=>{
+  const table=parsed.createElement('table'); table.className='word-signatures';
+  const tr=table.insertRow();
+  Array.from(grid.children).forEach(item=>{const td=tr.insertCell();td.innerHTML=item.innerHTML;});
+  grid.replaceWith(table);
+ });
+ const wordCss=`
+ <style>
+ @page{size:21cm 29.7cm;margin:1cm;mso-page-orientation:portrait}
+ html,body{margin:0;padding:0;font-family:Arial,sans-serif;font-size:9pt;color:#222}
+ *{box-sizing:border-box}
+ .report-sheet{width:100%;height:auto;min-height:0;padding:0;margin:0;overflow:visible;page-break-after:auto;mso-break-type:auto;break-after:auto}
+ .report-sheet.second-sheet:not(:last-child){page-break-after:always;mso-break-type:page;break-after:page}
+ .report-sheet:last-child{page-break-after:auto;mso-break-type:auto;break-after:auto}
+ .report-title{text-align:center;font-size:14pt;line-height:1.2;font-weight:bold;letter-spacing:.35px;margin:0 0 12px;padding:0}
+ .word-identity,.word-lower,.word-signatures{width:100%;border-collapse:collapse;table-layout:fixed;border:0;margin:0 0 9px}
+ .word-identity td,.word-lower td,.word-signatures td{border:0;padding:2px 4px;vertical-align:top}
+ .word-identity td{width:50%;font-size:8.5pt}
+ .word-identity td>div{display:block;min-height:13px}
+ .word-lower td:first-child{width:44%}.word-lower td:last-child{width:56%}
+ .word-signatures{margin-top:5mm;text-align:center;font-size:8.5pt;line-height:1.35}
+ .word-signatures td{width:33.333%;height:27mm;vertical-align:top}
+ .subject-table,.section-table,.word-lower table{width:100%;border-collapse:collapse;table-layout:fixed;margin:0 0 9px;mso-table-lspace:0pt;mso-table-rspace:0pt}
+ .subject-table th,.subject-table td,.section-table th,.section-table td{border:1px solid #888;padding:4px 5px;vertical-align:top;overflow-wrap:anywhere}
+ .subject-table th,.section-table th{background:#c9cacc;text-align:center;font-weight:bold}
+ .subject-table td,.section-table td{font-size:8pt}
+ .subject-table .num,.subject-table .score{text-align:center}
+ .subject-table .competency{white-space:pre-line;line-height:1.22}
+ .cocurricular th{font-size:8.5pt}.writing-area{height:30mm;white-space:pre-line}
+ .attendance-table td:last-child{text-align:center;width:34%}
+ .homeroom-table .note-area{height:24mm;white-space:pre-line}
+ .parent-response{margin-top:5px}.parent-response .response-area{height:25mm;white-space:pre-line}
+ .word-signatures strong,.word-signatures b{font-size:8pt}
+ table{mso-table-lspace:0pt;mso-table-rspace:0pt}
+ tr{page-break-inside:avoid;mso-row-break-inside:avoid}
+ </style>`;
+ parsed.head.insertAdjacentHTML('beforeend',wordCss);
+ parsed.title='Rapor '+(singleStudent?'Murid':'Kelas');
+ const wordHtml='<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'+parsed.documentElement.outerHTML+'</html>';
+ const blob=new Blob(['\ufeff',wordHtml],{type:'application/msword'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;
+ const safe=(v)=>String(v||'').replace(/[^a-z0-9_-]+/gi,'_');
+ a.download='Rapor_'+safe(u.className)+(student?'_'+safe(reportStudentName(student)):'_Satu_Kelas')+'.doc';
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+ showToast('Dokumen Word berhasil dibuat dengan tata letak yang diselaraskan dengan PDF.','success');
+};
+window.exportReportWordOne=function(){window.exportReportWord(true);};
+window.exportReportWordClass=function(){window.exportReportWord(false);};
 
         function renderCurrentView() {
             const view = window.AppState.currentView;
@@ -6194,6 +6802,11 @@ if (globalSem && !globalSem.dataset.initialized) {
                     container.innerHTML = getAssessmentsViewHTML(window.AppState.students || []);
                     bindAssessmentsEvents();
                     break;
+                case 'report-sd':
+                    title.innerText = 'Aplikasi Rapor SD';
+                    container.innerHTML = getReportViewHTML();
+                    bindReportEvents();
+                    break;
                 case 'health':
                     title.innerText = 'Administrasi & Pemantauan Kesehatan Murid';
                     container.innerHTML = getHealthViewHTML(sortStudentsAlphabetically(filterStudents(window.AppState.students)));
@@ -7724,7 +8337,7 @@ if (globalSem && !globalSem.dataset.initialized) {
                             className: targetClass,
                             date: activeDate,
                             academicYear: window.AppState.activeYear,
-                            semester: window.AppState.supervisiTelaahSemester || window.AppState.activeSemester,
+                            semester: window.AppState.activeSemester || 'Genap',
                             records: records,
                             updatedAt: serverTimestamp()
                         });
@@ -9184,6 +9797,16 @@ const data = {
                 'bahasa indonesia dan sastra': 'Bahasa Indonesia',
                 'pai': 'Agama dan Budi Pekerti',
                 'pendidikan agama islam': 'Agama dan Budi Pekerti',
+                'pendidikan agama islam dan budi pekerti': 'Agama dan Budi Pekerti',
+                'pendidikan agama dan budi pekerti': 'Agama dan Budi Pekerti',
+                'agama islam dan budi pekerti': 'Agama dan Budi Pekerti',
+                'agama dan budi pekerti': 'Agama dan Budi Pekerti',
+                'ilmu pengetahuan alam dan sosial': 'IPAS',
+                'ipas': 'IPAS',
+                'pendidikan jasmani olahraga dan kesehatan': 'PJOK',
+                'pendidikan jasmani, olahraga, dan kesehatan': 'PJOK',
+                'pendidikan jasmani olahraga kesehatan': 'PJOK',
+                'pjok': 'PJOK',
                 'informatika': 'Koding dan Kecerdasan Artifisial'
             };
             if (aliases[n]) return aliases[n];
@@ -9196,9 +9819,13 @@ const data = {
         function getLoggedInTeacherSubjects(teacherOverride) {
             const teachers = Array.isArray(window.AppState.teachers) ? window.AppState.teachers : [];
             const teacher = teacherOverride || teachers.find(t => String(t.id || '') === String(window.AppState.currentTeacherId || ''));
-            if (!teacher) return [];
-
+            // Hasil penugasan yang sudah dibaca saat login menjadi sumber cadangan
+            // agar daftar mapel tetap tampil walaupun objek guru belum termuat ulang.
             const raw = [];
+            if (!teacher) {
+                const cached = Array.isArray(window.AppState.subjectTeacherSubjects) ? window.AppState.subjectTeacherSubjects : [];
+                return [...new Set(cached.map(v => String(v || '').trim()).filter(Boolean))];
+            }
             const fields = [
                 teacher.subject, teacher.mapel, teacher.mataPelajaran, teacher.mata_pelajaran,
                 teacher.subjects, teacher.mapels, teacher.mataPelajaranDiampu,
@@ -9233,7 +9860,11 @@ const data = {
             };
             raw.forEach(add);
 
-            const combined = normalizeAssessmentSubject(raw.join(' | '));
+            // Gabungkan juga daftar mapel hasil validasi saat login.
+            const cachedSubjects = Array.isArray(window.AppState.subjectTeacherSubjects) ? window.AppState.subjectTeacherSubjects : [];
+            cachedSubjects.forEach(add);
+
+            const combined = normalizeAssessmentSubject(raw.join(' | ') + ' | ' + cachedSubjects.join(' | '));
             ASSESSMENT_MASTER_SUBJECTS.forEach(subject => {
                 if (combined.includes(normalizeAssessmentSubject(subject))) add(subject);
             });
@@ -9686,6 +10317,19 @@ if (jumlahNilai > 0) {
                 document.querySelectorAll('.sas-input').forEach(input => {
                     const studentId = input.getAttribute('data-studentid');
                     if (records[studentId]) records[studentId].sas = input.value;
+                });
+
+                // Simpan salinan Nilai Akhir yang sama dengan hasil calculateGrades()
+                // (rata-rata nilai SLM terisi dan SAS terisi, dibulatkan). Nilai SLM/SAS
+                // tetap utuh; modul rapor hanya membaca field nilaiAkhir ini.
+                Object.keys(records).forEach(studentId => {
+                    const rec = records[studentId];
+                    const slmVals = Object.values(rec.slm || {}).map(v => parseFloat(v)).filter(v => !isNaN(v));
+                    const sasVal = parseFloat(rec.sas);
+                    let total = slmVals.reduce((a,b)=>a+b,0);
+                    let count = slmVals.length;
+                    if (!isNaN(sasVal)) { total += sasVal; count++; }
+                    rec.nilaiAkhir = count > 0 ? Math.round(total / count) : null;
                 });
 
                 try {
