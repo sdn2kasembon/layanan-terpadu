@@ -3166,7 +3166,9 @@ function reportCanonicalSubject(subject){
 // (IPAS, PJOK, Agama dan Budi Pekerti) tetap dipertahankan agar data/TP lama kompatibel.
 const REPORT_SUBJECT_ORDER = [
   'Agama dan Budi Pekerti','Pendidikan Pancasila','Bahasa Indonesia','Matematika',
-  'IPAS','PJOK','Bahasa Inggris','Seni Rupa','Seni Musik','Seni Tari','Seni Teater','Bahasa Daerah'
+  'IPAS','PJOK','Bahasa Inggris','Seni dan Budaya (Seni Rupa)',
+  'Seni dan Budaya (Seni Musik)','Seni dan Budaya (Seni Tari)',
+  'Seni dan Budaya (Seni Teater)','Bahasa Daerah'
 ];
 function reportSubjectLabel(subject){
   const canonical=reportCanonicalSubject(subject);
@@ -3322,7 +3324,7 @@ function getReportViewHTML(){
   }).join('');
   return `<div class="space-y-4">
     <div class="bg-white border rounded-2xl p-4 shadow-sm">
-      <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="text-xl font-black text-slate-800">Aplikasi Rapor SD</h2><p class="text-sm text-slate-500 mt-1">${role==='subject_teacher'?'Guru Mapel hanya mengisi deskripsi capaian kompetensi pada mata pelajaran yang diampu. Nilai dan deskripsi tersinkron otomatis ke dasbor Wali Kelas.':role==='teacher'?'Dasbor Wali Kelas: rekap nilai dan deskripsi dari seluruh Guru Mapel, data pendukung, serta pencetakan rapor.':'Pemantauan data nilai dan deskripsi rapor.'}</p></div>${role==='teacher'?'<div class="flex flex-wrap gap-2"><button onclick="window.previewReportClass()" class="px-3 py-2 rounded-lg border text-xs font-bold">Pratinjau / Cetak Kelas</button><button onclick="window.previewReportOne()" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold">Pratinjau / Cetak Murid</button><button onclick="window.exportReportWordClass()" class="px-3 py-2 rounded-lg bg-blue-700 text-white text-xs font-bold">Cetak Word Kelas</button><button onclick="window.exportReportWordOne()" class="px-3 py-2 rounded-lg bg-indigo-700 text-white text-xs font-bold">Cetak Word Murid</button></div>':''}</div>
+      <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="text-xl font-black text-slate-800">Aplikasi Rapor SD</h2><p class="text-sm text-slate-500 mt-1">${role==='subject_teacher'?'Guru Mapel hanya mengisi deskripsi capaian kompetensi pada mata pelajaran yang diampu. Nilai dan deskripsi tersinkron otomatis ke dasbor Wali Kelas.':role==='teacher'?'Dasbor Wali Kelas: rekap nilai dan deskripsi dari seluruh Guru Mapel, data pendukung, serta pencetakan rapor.':'Pemantauan data nilai dan deskripsi rapor.'}</p></div>${role==='teacher'?'<div class="flex flex-wrap gap-2"><button onclick="window.previewReportClass()" class="px-3 py-2 rounded-lg border text-xs font-bold">Pratinjau / Cetak Kelas</button><button onclick="window.previewReportOne()" class="px-3 py-2 rounded-lg bg-slate-800 text-white text-xs font-bold">Pratinjau / Cetak Murid</button></div>':''}</div>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
        <div><label class="block text-xs font-bold mb-1">Tahun Ajaran</label><input id="reportYear" value="${reportEsc(u.year)}" class="w-full border rounded-lg p-2 text-sm" placeholder="2026/2027"></div>
        <div><label class="block text-xs font-bold mb-1">Semester</label><select id="reportSemester" class="w-full border rounded-lg p-2 text-sm"><option ${u.semester==='Ganjil'?'selected':''}>Ganjil</option><option ${u.semester==='Genap'?'selected':''}>Genap</option></select></div>
@@ -9777,7 +9779,9 @@ const data = {
         // pada kelas yang ditetapkan Admin. Administrator tetap bebas.
         const ASSESSMENT_MASTER_SUBJECTS = [
             'Agama dan Budi Pekerti','Pendidikan Pancasila','Bahasa Indonesia','Matematika',
-            'IPAS','Seni Budaya','Koding dan Kecerdasan Artifisial','PJOK','Bahasa Inggris','Bahasa Daerah'
+            'IPAS','Seni dan Budaya (Seni Rupa)','Seni dan Budaya (Seni Musik)',
+            'Seni dan Budaya (Seni Tari)','Seni dan Budaya (Seni Teater)',
+            'Koding dan Kecerdasan Artifisial','PJOK','Bahasa Inggris','Bahasa Daerah'
         ];
 
         function normalizeAssessmentSubject(value) {
@@ -9807,6 +9811,11 @@ const data = {
                 'pendidikan jasmani, olahraga, dan kesehatan': 'PJOK',
                 'pendidikan jasmani olahraga kesehatan': 'PJOK',
                 'pjok': 'PJOK',
+                'seni budaya': 'Seni dan Budaya (Seni Rupa)',
+                'seni rupa': 'Seni dan Budaya (Seni Rupa)',
+                'seni musik': 'Seni dan Budaya (Seni Musik)',
+                'seni tari': 'Seni dan Budaya (Seni Tari)',
+                'seni teater': 'Seni dan Budaya (Seni Teater)',
                 'informatika': 'Koding dan Kecerdasan Artifisial'
             };
             if (aliases[n]) return aliases[n];
@@ -9958,15 +9967,27 @@ const data = {
                                 ${teacherOptions}
                             </select>
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2 items-center">
+                            ${canEditAssessment ? `
+                                <button id="btnAssessmentTemplate" type="button" class="bg-slate-600 hover:bg-slate-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow flex items-center gap-2 transition">
+                                    <i data-lucide="download" class="w-4 h-4"></i> Unduh Template
+                                </button>
+                                <button id="btnAssessmentImport" type="button" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow flex items-center gap-2 transition">
+                                    <i data-lucide="file-up" class="w-4 h-4"></i> Impor Excel
+                                </button>
+                            ` : ''}
+                            <button id="btnAssessmentExport" type="button" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow flex items-center gap-2 transition">
+                                <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Ekspor Excel
+                            </button>
                             ${window.AppState.role !== 'principal' ? `
-                                <button id="btnSaveAssessments" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow flex items-center gap-1 transition">
+                                <button id="btnSaveAssessments" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow flex items-center gap-1 transition">
                                     <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Nilai
                                 </button>
                             ` : ''}
-                            <button id="btnPrintGradePdf" class="bg-slate-800 text-white px-3.5 py-1.5 rounded-lg text-xs font-semibold shadow flex items-center gap-1">
+                            <button id="btnPrintGradePdf" class="bg-slate-800 text-white px-3.5 py-2 rounded-lg text-xs font-semibold shadow flex items-center gap-1">
                                 <i data-lucide="download" class="w-3.5 h-3.5"></i> Unduh Nilai PDF
                             </button>
+                            <input id="assessmentExcelFile" type="file" accept=".xlsx,.xls" class="hidden" />
                         </div>
                     </div>
 
@@ -10007,6 +10028,19 @@ const data = {
             // dan tabel murid tidak pernah dirender. PDF tetap bisa menampilkan nama
             // karena proses PDF tidak melewati variabel tersebut.
             const canEditAssessment = ['teacher', 'subject_teacher'].includes(window.AppState.role);
+
+            // Normalisasi nama kelas dipakai bersama oleh pemuatan tabel dan
+            // penyimpanan nilai. Letakkan pada lingkup bindAssessmentsEvents agar
+            // handler tombol Simpan Nilai dapat mengaksesnya.
+            const normalizeAssessmentClass = (value) => String(value || '')
+                .trim()
+                .toLowerCase()
+                .replace(/^wali\s+kelas\s*/i, '')
+                .replace(/^wali\s*/i, '')
+                .replace(/^kelas\s*/i, '')
+                .replace(/^rombel\s*/i, '')
+                .replace(/[\s._-]+/g, '')
+                .trim();
 
             // Wali Kelas diarahkan ke kelasnya. Guru Mapel TIDAK dikunci
             // ke satu kelas: ia berhak memilih seluruh kelas, tetapi hanya
@@ -10103,18 +10137,8 @@ if (jumlahNilai > 0) {
                     return;
                 }
 
-                // Cocokkan nama kelas secara fleksibel agar data murid tetap muncul
-                // meskipun tersimpan sebagai "Kelas 1A", "1A", atau "Wali Kelas 1A".
-                const normalizeAssessmentClass = (value) => String(value || '')
-                    .trim()
-                    .toLowerCase()
-                    .replace(/^wali\s+kelas\s*/i, '')
-                    .replace(/^wali\s*/i, '')
-                    .replace(/^kelas\s*/i, '')
-                    .replace(/^rombel\s*/i, '')
-                    .replace(/[\s._-]+/g, '')
-                    .trim();
-
+                // Cocokkan nama kelas secara fleksibel, memakai helper pada lingkup
+                // bindAssessmentsEvents agar juga tersedia saat tombol Simpan diklik.
                 const selectedClassKey = normalizeAssessmentClass(cls);
 
                 // Ambil murid berdasarkan kelas yang dipilih.
@@ -10213,6 +10237,45 @@ if (jumlahNilai > 0) {
                 filteredStudents.forEach(s => calculateGrades(s.id));
             };
 
+            // Navigasi input nilai dengan tombol panah seperti lembar kerja Excel:
+            // kiri/kanan berpindah kolom pada murid yang sama, atas/bawah
+            // berpindah murid pada kolom penilaian yang sama.
+            // Event dipasang pada tbody (delegasi) agar tetap aktif setelah tabel dirender ulang.
+            if (tableBody && !tableBody.dataset.arrowNavigationBound) {
+                tableBody.dataset.arrowNavigationBound = 'true';
+                tableBody.addEventListener('keydown', (event) => {
+                    const current = event.target;
+                    if (!current || !current.matches('input.assess-input')) return;
+                    if (event.altKey || event.ctrlKey || event.metaKey) return;
+
+                    const key = event.key;
+                    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Enter'].includes(key)) return;
+
+                    const currentRow = current.closest('tr');
+                    if (!currentRow) return;
+                    const currentRowInputs = Array.from(currentRow.querySelectorAll('input.assess-input'));
+                    const currentColumn = currentRowInputs.indexOf(current);
+                    if (currentColumn < 0) return;
+
+                    let target = null;
+                    if (key === 'ArrowLeft' || key === 'ArrowRight' || key === 'Tab') {
+                        const step = (key === 'ArrowLeft' || (key === 'Tab' && event.shiftKey)) ? -1 : 1;
+                        target = currentRowInputs[currentColumn + step] || null;
+                    } else {
+                        const rows = Array.from(tableBody.querySelectorAll('tr')).filter(row => row.querySelector('input.assess-input'));
+                        const currentRowIndex = rows.indexOf(currentRow);
+                        const step = (key === 'ArrowUp' || (key === 'Enter' && event.shiftKey)) ? -1 : 1;
+                        const targetRow = rows[currentRowIndex + step];
+                        target = targetRow ? Array.from(targetRow.querySelectorAll('input.assess-input'))[currentColumn] || null : null;
+                    }
+
+                    if (target) {
+                        event.preventDefault();
+                        target.focus({ preventScroll: true });
+                    }
+                });
+            }
+
             subjectSelect?.addEventListener('change', loadAssessmentsTable);
             classSelect?.addEventListener('change', loadAssessmentsTable);
 
@@ -10274,6 +10337,146 @@ if (jumlahNilai > 0) {
                     ['No', 'Nama Murid', 'SLM 1', 'SLM 2', 'SLM 3', 'SLM 4', 'SLM 5', 'SLM 6', 'SLM 7', 'SLM 8', 'SAS', 'Nilai Akhir(Rapor)'], 
                     rowData, 'landscape', subjectTeacherName, 'Guru Mata Pelajaran', pdfPrintDate
                 );
+            });
+
+            // Template, impor, dan ekspor Excel Penilaian Sumatif.
+            // Impor hanya mengisi kolom nilai yang tersedia; penyimpanan ke Firebase
+            // tetap dilakukan melalui tombol "Simpan Nilai" agar tidak menimpa data tanpa konfirmasi.
+            const getAssessmentExcelContext = () => {
+                const subject = subjectSelect?.value || '';
+                const cls = classSelect?.value || '';
+                if (!subject || !cls) {
+                    showToast('Pilih Mata Pelajaran dan Kelas terlebih dahulu.', 'error');
+                    return null;
+                }
+                if (window.AppState.role === 'subject_teacher' && !isSubjectTeacherAllowedSubject(subject)) {
+                    showToast('Anda hanya dapat mengelola mata pelajaran yang diampu.', 'error');
+                    return null;
+                }
+                const rows = Array.from(tableBody?.querySelectorAll('tr') || []).filter(tr => tr.querySelector('.assess-input'));
+                if (!rows.length) {
+                    showToast('Data murid belum tersedia. Pilih kelas yang memiliki data murid.', 'error');
+                    return null;
+                }
+                return { subject, cls, rows };
+            };
+            const assessmentExcelHeaders = ['ID Murid', 'Nama Murid', 'SLM 1', 'SLM 2', 'SLM 3', 'SLM 4', 'SLM 5', 'SLM 6', 'SLM 7', 'SLM 8', 'SAS'];
+            const getAssessmentExcelRows = (rows, blankValues) => rows.map((tr, index) => {
+                const firstInput = tr.querySelector('.assess-input');
+                const studentId = firstInput?.getAttribute('data-studentid') || '';
+                const name = tr.children[1]?.textContent?.trim() || '';
+                const values = [];
+                for (let col = 1; col <= 8; col++) {
+                    const input = tr.querySelector(`.slm-input[data-studentid="${CSS.escape(studentId)}"][data-col="${col}"]`);
+                    values.push(blankValues ? '' : (input?.value ?? ''));
+                }
+                const sas = tr.querySelector(`.sas-input[data-studentid="${CSS.escape(studentId)}"]`);
+                return [studentId, name, ...values, blankValues ? '' : (sas?.value ?? '')];
+            });
+            const styleAssessmentSheet = (ws, rowCount, colCount) => {
+                const border = { top: { style: 'thin', color: { rgb: 'CBD5E1' } }, bottom: { style: 'thin', color: { rgb: 'CBD5E1' } }, left: { style: 'thin', color: { rgb: 'CBD5E1' } }, right: { style: 'thin', color: { rgb: 'CBD5E1' } } };
+                for (let r = 0; r < rowCount; r++) for (let c = 0; c < colCount; c++) {
+                    const cell = ws[XLSX.utils.encode_cell({ r, c })];
+                    if (!cell) continue;
+                    cell.s = { border, alignment: { vertical: 'center', horizontal: c < 2 ? 'left' : 'center', wrapText: true }, ...(r === 0 ? { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '1E40AF' } } } : {}) };
+                }
+                ws['!cols'] = [{ wch: 22 }, { wch: 30 }, ...Array(9).fill({ wch: 11 })];
+                ws['!freeze'] = { xSplit: 2, ySplit: 1 };
+                ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(0, rowCount - 1), c: colCount - 1 } }) };
+            };
+
+            document.getElementById('btnAssessmentTemplate')?.addEventListener('click', () => {
+                const ctx = getAssessmentExcelContext(); if (!ctx) return;
+                if (typeof XLSX === 'undefined') return showToast('Fitur Excel belum termuat. Periksa koneksi internet lalu muat ulang aplikasi.', 'error');
+                const data = [assessmentExcelHeaders, ...getAssessmentExcelRows(ctx.rows, true)];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                styleAssessmentSheet(ws, data.length, assessmentExcelHeaders.length);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Template Nilai');
+                const safe = v => String(v || '').replace(/[\\/:*?"<>|]/g, '-');
+                XLSX.writeFile(wb, `Template_Penilaian_${safe(ctx.subject)}_${safe(ctx.cls)}_${safe(window.AppState.activeYear)}.xlsx`);
+                showToast('Template Excel berhasil diunduh.', 'success');
+            });
+
+            document.getElementById('btnAssessmentImport')?.addEventListener('click', () => {
+                const ctx = getAssessmentExcelContext(); if (!ctx) return;
+                document.getElementById('assessmentExcelFile')?.click();
+            });
+            document.getElementById('assessmentExcelFile')?.addEventListener('change', async (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                try {
+                    if (typeof XLSX === 'undefined') throw new Error('Pustaka Excel belum termuat.');
+                    const ctx = getAssessmentExcelContext(); if (!ctx) return;
+                    const buffer = await file.arrayBuffer();
+                    const workbook = XLSX.read(buffer, { type: 'array' });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const imported = XLSX.utils.sheet_to_json(firstSheet, { defval: '', raw: false });
+                    if (!imported.length) throw new Error('File Excel tidak berisi data.');
+                    const normalizeHeader = value => String(value || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+                    const findValue = (obj, candidates) => {
+                        const key = Object.keys(obj).find(k => candidates.includes(normalizeHeader(k)));
+                        return key ? obj[key] : '';
+                    };
+                    const byId = new Map();
+                    const byName = new Map();
+                    ctx.rows.forEach(tr => {
+                        const input = tr.querySelector('.assess-input');
+                        const id = input?.getAttribute('data-studentid') || '';
+                        const name = tr.children[1]?.textContent?.trim() || '';
+                        if (id) byId.set(String(id), id);
+                        if (name) byName.set(name.toLowerCase().replace(/\s+/g, ' '), id);
+                    });
+                    let updated = 0, skipped = 0;
+                    imported.forEach(record => {
+                        const idRaw = findValue(record, ['idmurid', 'studentid', 'id']);
+                        const nameRaw = findValue(record, ['namamurid', 'namasiswa', 'nama', 'studentname']);
+                        const id = (idRaw !== '' && byId.has(String(idRaw))) ? byId.get(String(idRaw)) : byName.get(String(nameRaw || '').trim().toLowerCase().replace(/\s+/g, ' '));
+                        if (!id) { skipped++; return; }
+                        let changed = false;
+                        for (let col = 1; col <= 8; col++) {
+                            const value = findValue(record, [`slm${col}`, `sumatiflingkupmateri${col}`]);
+                            if (value === '' || value === null || value === undefined) continue;
+                            const number = Number(String(value).replace(',', '.'));
+                            if (!Number.isFinite(number) || number < 0 || number > 100) { skipped++; continue; }
+                            const input = tableBody.querySelector(`.slm-input[data-studentid="${CSS.escape(id)}"][data-col="${col}"]`);
+                            if (input && !input.readOnly) { input.value = number; changed = true; }
+                        }
+                        const sasValue = findValue(record, ['sas', 'sumatifakhirsemester']);
+                        if (sasValue !== '' && sasValue !== null && sasValue !== undefined) {
+                            const number = Number(String(sasValue).replace(',', '.'));
+                            if (Number.isFinite(number) && number >= 0 && number <= 100) {
+                                const input = tableBody.querySelector(`.sas-input[data-studentid="${CSS.escape(id)}"]`);
+                                if (input && !input.readOnly) { input.value = number; changed = true; }
+                            } else skipped++;
+                        }
+                        if (changed) { calculateGrades(id); updated++; }
+                    });
+                    showToast(`Impor selesai: ${updated} murid diperbarui${skipped ? `, ${skipped} data dilewati` : ''}. Periksa nilai lalu klik Simpan Nilai.`, updated ? 'success' : 'error');
+                } catch (error) {
+                    showToast('Gagal mengimpor Excel: ' + (error.message || error), 'error');
+                } finally {
+                    event.target.value = '';
+                }
+            });
+
+            document.getElementById('btnAssessmentExport')?.addEventListener('click', () => {
+                const ctx = getAssessmentExcelContext(); if (!ctx) return;
+                if (typeof XLSX === 'undefined') return showToast('Fitur Excel belum termuat. Periksa koneksi internet lalu muat ulang aplikasi.', 'error');
+                const title = `PENILAIAN SUMATIF - ${ctx.subject} | ${ctx.cls}`;
+                const data = [[title], [`Tahun Ajaran: ${window.AppState.activeYear || '-'} | Semester: ${window.AppState.activeSemester || '-'}`], [], assessmentExcelHeaders, ...getAssessmentExcelRows(ctx.rows, false)];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                ws['!merges'] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: assessmentExcelHeaders.length - 1 } }, { s: { r: 1, c: 0 }, e: { r: 1, c: assessmentExcelHeaders.length - 1 } }];
+                styleAssessmentSheet(ws, data.length, assessmentExcelHeaders.length);
+                for (let c = 0; c < assessmentExcelHeaders.length; c++) {
+                    const cell = ws[XLSX.utils.encode_cell({ r: 3, c })];
+                    if (cell) cell.s = { font: { bold: true, color: { rgb: 'FFFFFF' } }, fill: { fgColor: { rgb: '1E40AF' } }, border: { top: { style: 'thin', color: { rgb: 'CBD5E1' } }, bottom: { style: 'thin', color: { rgb: 'CBD5E1' } }, left: { style: 'thin', color: { rgb: 'CBD5E1' } }, right: { style: 'thin', color: { rgb: 'CBD5E1' } } }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+                }
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Penilaian Sumatif');
+                const safe = v => String(v || '').replace(/[\\/:*?"<>|]/g, '-');
+                XLSX.writeFile(wb, `Penilaian_Sumatif_${safe(ctx.subject)}_${safe(ctx.cls)}_${safe(window.AppState.activeYear)}.xlsx`);
+                showToast('Ekspor Excel Penilaian Sumatif berhasil.', 'success');
             });
 
             document.getElementById('btnSaveAssessments')?.addEventListener('click', async () => {
