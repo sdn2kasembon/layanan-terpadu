@@ -3326,13 +3326,15 @@ function getReportViewHTML(){
     return keyNumber ? keyNumber === classNoForTP : reportNorm(k) === reportNorm(u.className);
   });
   const masterTP = masterClassKey ? (Array.isArray(masterByClass[masterClassKey]) ? masterByClass[masterClassKey] : []) : [];
-  const customTP = (window.AppState.reportTPCustom || []).filter(x => {
+  const customRecords = (window.AppState.reportTPCustom || []).filter(x => {
     const customSubjectKeys = reportSubjectAliases(x.subject);
     const customClassNo = reportClassNumber(x.classNumber || x.className || '');
-    return [...wantedSubjectKeys].some(w => customSubjectKeys.has(w)) &&
-      customClassNo === classNoForTP;
-  }).map(x => x.text).filter(Boolean);
-  const tp = [...new Set([...masterTP, ...customTP].map(x => String(x || '').trim()).filter(Boolean))];
+    return [...wantedSubjectKeys].some(w => customSubjectKeys.has(w)) && customClassNo === classNoForTP;
+  });
+  // TP master dapat disunting melalui catatan override, tanpa mengubah sumber master.
+  const tpOverrides = customRecords.filter(x => x.originalText && x.text).reduce((m,x)=>{m[x.originalText]=x.text;return m;},{});
+  const customTP = customRecords.filter(x => !x.originalText).map(x => x.text).filter(Boolean);
+  const tp = [...new Set([...masterTP.map(x=>tpOverrides[x]||x), ...customTP].map(x => String(x || '').trim()).filter(Boolean))];
   const selectedTP=saved?.selectedTP||[];
   const canEdit=reportIsEditable()&&reportCanEditClass(u.className)&&reportCanEditSubject(u.subject);
   const canSubjectTeacherEditTP=window.AppState.role==='subject_teacher' && reportCanEditSubject(u.subject);
@@ -3362,8 +3364,8 @@ function getReportViewHTML(){
        <h3 class="font-extrabold text-slate-800 mb-3">Pengisian Deskripsi</h3>
        <label class="block text-xs font-bold mb-1">Nama Murid</label><select id="reportStudent" class="w-full border rounded-lg p-2 text-sm mb-3">${studentOptions}</select>
        <div class="text-xs text-slate-500 mb-2">Beri ceklis pada status setiap Tujuan Pembelajaran. Deskripsi capaian akan terbentuk otomatis dengan kalimat positif dan tetap dapat disunting.</div>${reportCanonicalSubject(u.subject)==='Bahasa Daerah'?`<div class="text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg p-2 mb-2">TP Bahasa Daerah mengikuti fase: kelas I–II Fase A, kelas III–IV Fase B, dan kelas V–VI Fase C. Wali Kelas mengelola penilaian dan deskripsinya.</div>`:''}
-       ${role==='admin'?`<details class="mb-3 border rounded-lg p-3"><summary class="cursor-pointer text-xs font-bold text-blue-700">Administrator: Tambah TP / Mata Pelajaran</summary><div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3"><input id="customTPSubject" class="border rounded-lg p-2 text-xs" placeholder="Nama mata pelajaran (mis. Pendidikan Agama)"><input id="customTPText" class="border rounded-lg p-2 text-xs" placeholder="Redaksi Tujuan Pembelajaran"></div><button type="button" onclick="window.addCustomReportTP()" class="mt-2 px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold">Simpan TP Tambahan untuk Kelas ${reportEsc(classNo)}</button><p class="text-[10px] text-slate-500 mt-1">TP tambahan disimpan terpisah dari TP sumber dan dapat dipilih sesuai kelas.</p></details>`:''}
-       <div class="max-h-96 overflow-y-auto border rounded-xl p-3 space-y-3" id="reportTPList">${tp.length?tp.map((t,i)=>{const achieved=(saved?.achievedTP||(!saved?.achievedTP&&!saved?.notYetTP?selectedTP:[])).includes(t);const developing=(saved?.notYetTP||[]).includes(t);return `<div class="rounded-lg border p-3"><p class="text-sm font-medium mb-2">${i+1}. ${reportEsc(t)}</p><div class="flex flex-wrap gap-x-5 gap-y-2 text-xs"><label class="flex items-center gap-2 text-emerald-700 font-semibold"><input type="checkbox" class="report-tp-achieved" data-tp="${reportEsc(t)}" ${achieved?'checked':''} ${(canEdit||canSubjectTeacherEditTP)?'':'disabled'} onchange="window.updateReportTPStatus(this)"> Tercapai</label><label class="flex items-center gap-2 text-amber-700 font-semibold"><input type="checkbox" class="report-tp-developing" data-tp="${reportEsc(t)}" ${developing?'checked':''} ${(canEdit||canSubjectTeacherEditTP)?'':'disabled'} onchange="window.updateReportTPStatus(this)"> Belum tercapai / perlu penguatan</label></div></div>`;}).join(''):'<p class="text-sm text-amber-700">TP belum ditemukan untuk mata pelajaran '+reportEsc(u.subject||'-')+' kelas '+reportEsc(u.className||'-')+'. Periksa penugasan mata pelajaran dan data TP master, atau minta administrator menambahkan TP.</p>'}</div>       <div class="mt-3"><label class="block text-xs font-bold mb-1">Deskripsi Capaian Kompetensi (otomatis, dapat diedit)</label><textarea id="reportDescription" rows="7" class="w-full border rounded-lg p-3 text-sm" ${canEdit?'':'readonly'} placeholder="Ceklis status TP untuk membentuk deskripsi capaian secara otomatis.">${reportEsc(saved?.description||'')}</textarea><p class="text-[10px] text-slate-500 mt-1">TP tercapai dan TP yang masih perlu penguatan akan dijelaskan secara terpisah dengan bahasa yang positif.</p></div>
+${canEdit?`<div class="mb-3 border border-blue-200 bg-blue-50 rounded-xl p-3"><div class="text-xs font-bold text-blue-800 mb-2">Kelola Tujuan Pembelajaran (TP)</div><div class="flex gap-2"><input id="customTPText" class="flex-1 border rounded-lg p-2 text-xs bg-white" placeholder="Tulis TP baru secara manual…"><button type="button" onclick="window.addCustomReportTP()" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold">+ Tambah TP</button></div><p class="text-[10px] text-blue-700 mt-1">Anda dapat menambahkan TP baru, mengedit TP yang ada, atau menghapus TP tambahan.</p></div>`:''}
+       <div class="max-h-96 overflow-y-auto border rounded-xl p-3 space-y-3" id="reportTPList">${tp.length?tp.map((t,i)=>{const achieved=(saved?.achievedTP||(!saved?.achievedTP&&!saved?.notYetTP?selectedTP:[])).includes(t);const developing=(saved?.notYetTP||[]).includes(t);const customRecord=customRecords.find(x=>!x.originalText&&x.text===t);return `<div class="rounded-lg border p-3"><div class="flex justify-between items-start gap-2"><p class="text-sm font-medium mb-2 flex-1">${i+1}. ${reportEsc(t)}</p>${canEdit?`<div class="flex gap-1 shrink-0"><button type="button" title="Edit TP" onclick="window.editReportTP('${reportEsc(t)}')" class="px-2 py-1 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">Edit</button>${customRecord?`<button type="button" title="Hapus TP tambahan" onclick="window.deleteCustomReportTP('${reportEsc(customRecord.id)}')" class="px-2 py-1 rounded bg-red-100 text-red-700 text-[10px] font-bold">Hapus</button>`:''}</div>`:''}</div><div class="flex flex-wrap gap-x-5 gap-y-2 text-xs"><label class="flex items-center gap-2 text-emerald-700 font-semibold"><input type="checkbox" class="report-tp-achieved" data-tp="${reportEsc(t)}" ${achieved?'checked':''} ${(canEdit||canSubjectTeacherEditTP)?'':'disabled'} onchange="window.updateReportTPStatus(this)"> Tercapai</label><label class="flex items-center gap-2 text-amber-700 font-semibold"><input type="checkbox" class="report-tp-developing" data-tp="${reportEsc(t)}" ${developing?'checked':''} ${(canEdit||canSubjectTeacherEditTP)?'':'disabled'} onchange="window.updateReportTPStatus(this)"> Belum tercapai / perlu penguatan</label></div></div>`;}).join(''):'<p class="text-sm text-amber-700">TP belum ditemukan untuk mata pelajaran '+reportEsc(u.subject||'-')+' kelas '+reportEsc(u.className||'-')+'. Periksa penugasan mata pelajaran dan data TP master, atau minta administrator menambahkan TP.</p>'}</div>       <div class="mt-3"><label class="block text-xs font-bold mb-1">Deskripsi Capaian Kompetensi (otomatis, dapat diedit)</label><textarea id="reportDescription" rows="7" class="w-full border rounded-lg p-3 text-sm" ${canEdit?'':'readonly'} placeholder="Ceklis status TP untuk membentuk deskripsi capaian secara otomatis.">${reportEsc(saved?.description||'')}</textarea><p class="text-[10px] text-slate-500 mt-1">TP tercapai dan TP yang masih perlu penguatan akan dijelaskan secara terpisah dengan bahasa yang positif.</p></div>
        ${['admin','teacher'].includes(role)?`<div class="mt-4 border-t pt-3 space-y-3">
         <h4 class="font-extrabold text-sm">Data Pendukung Rapor</h4>
         <div><label class="block text-xs font-bold mb-1">Kokurikuler – Kegiatan dan Capaian</label><textarea id="reportKokurikuler" rows="3" class="w-full border rounded-lg p-3 text-sm" ${reportCanEditClass(u.className)?'':'readonly'} placeholder="Tuliskan kegiatan kokurikuler dan capaian murid...">${reportEsc(supportData.kokurikulerDescription||'')}</textarea></div>
@@ -3488,22 +3490,30 @@ window.saveReportSupportingData=async function(){
 };
 
 window.addCustomReportTP=async function(){
- if(window.AppState.role!=='admin') return showToast('Hanya administrator yang dapat menambah TP.','error');
- const u=window.ReportUI, subject=document.getElementById('customTPSubject')?.value?.trim()||u.subject, text=document.getElementById('customTPText')?.value?.trim()||'';
- const classNumber=String((u.className.match(/\\d+/)||[])[0]||'');
- if(!subject||!text||!classNumber) return showToast('Nama mata pelajaran, kelas, dan redaksi TP wajib diisi.','error');
+ const u=window.ReportUI, text=document.getElementById('customTPText')?.value?.trim()||'', subject=u.subject;
+ const classNumber=String((u.className.match(/\d+/)||[])[0]||'');
+ if(!text||!subject||!classNumber) return showToast('Redaksi TP, mata pelajaran, dan kelas wajib tersedia.','error');
+ if(!reportCanEditClass(u.className)||!reportCanEditSubject(u.subject)||!['admin','teacher','subject_teacher'].includes(window.AppState.role)) return showToast('Tidak memiliki hak untuk mengelola TP pada kelas/mapel ini.','error');
  if(!auth?.currentUser||!firebaseAuthReady) return showToast('Firebase belum siap.','error');
- const exists=(window.AppState.reportTPCustom||[]).some(x=>x.subject===subject&&String(x.classNumber)===classNumber&&x.text===text);
- if(exists) return showToast('TP tersebut sudah tersedia.','info');
- const id=[subject,classNumber,Date.now()].map(encodeURIComponent).join('__');
+ if((window.AppState.reportTPCustom||[]).some(x=>x.subject===subject&&String(x.classNumber)===classNumber&&!x.originalText&&x.text===text)) return showToast('TP tersebut sudah tersedia.','info');
+ const id=[subject,classNumber,'manual',Date.now()].map(encodeURIComponent).join('__');
  showLoading('Menyimpan TP tambahan...');
- try{
-  await setDoc(getPublicDoc('reportTPCustom',id),{subject,classNumber,text,createdBy:auth.currentUser.uid,updatedAt:serverTimestamp()});
-  window.ReportUI.subject=subject;
-  showToast('TP tambahan berhasil disimpan.','success');
- }catch(e){showToast('Gagal menyimpan TP: '+e.message,'error');}
- finally{hideLoading();}
+ try{await setDoc(getPublicDoc('reportTPCustom',id),{subject,classNumber,text,createdBy:auth.currentUser.uid,updatedAt:serverTimestamp()});document.getElementById('customTPText').value='';showToast('TP tambahan berhasil disimpan.','success');renderCurrentView();}
+ catch(e){showToast('Gagal menyimpan TP: '+e.message,'error');}finally{hideLoading();}
 };
+window.editReportTP=async function(oldText){
+ const u=window.ReportUI; if(!reportCanEditClass(u.className)||!reportCanEditSubject(u.subject)) return showToast('Tidak berwenang mengedit TP.','error');
+ const next=prompt('Edit Tujuan Pembelajaran:',oldText); if(next===null)return; const text=next.trim();if(!text)return showToast('Redaksi TP tidak boleh kosong.','error');
+ const classNumber=String((u.className.match(/\d+/)||[])[0]||''); const subject=u.subject;
+ const existing=(window.AppState.reportTPCustom||[]).find(x=>x.subject===subject&&String(x.classNumber)===classNumber&&(x.originalText===oldText||x.text===oldText&&x.originalText));
+ const originalText=existing?.originalText||oldText; const id=existing?.id||[subject,classNumber,'edit',Date.now()].map(encodeURIComponent).join('__');
+ showLoading('Menyimpan perubahan TP...');try{await setDoc(getPublicDoc('reportTPCustom',id),{subject,classNumber,originalText,text,createdBy:auth.currentUser.uid,updatedAt:serverTimestamp()},{merge:true});showToast('TP berhasil diperbarui.','success');renderCurrentView();}catch(e){showToast('Gagal mengedit TP: '+e.message,'error');}finally{hideLoading();}
+};
+window.deleteCustomReportTP=async function(id){
+ const record=(window.AppState.reportTPCustom||[]).find(x=>x.id===id);if(!record)return;
+ if(!confirm('Hapus TP tambahan ini?'))return;showLoading('Menghapus TP...');try{await deleteDoc(getPublicDoc('reportTPCustom',id));showToast('TP tambahan dihapus.','success');renderCurrentView();}catch(e){showToast('Gagal menghapus TP: '+e.message,'error');}finally{hideLoading();}
+};
+
 function reportPrintHTML(cls,student,selectedPrintDate){
  const u=window.ReportUI, info=window.AppState.schoolInfo||{};
  const printDate=selectedPrintDate||u.printDate||new Date().toISOString().slice(0,10);
